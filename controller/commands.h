@@ -1,0 +1,6 @@
+enum massage{
+	CONTINUE,
+	REJUVENATE,
+	READY,
+	STARTING_REJUVENATING,
+};
