@@ -3,7 +3,7 @@ import csv
 import sys
 import ast
 
-columns = ['RTTC','gen_time','mem_used_slope','mem_free_slope','mem_shared_slope','mem_buffers_slope','mem_cached_slope','swap_used_slope','swap_free_slope','cpu_user_slope','cpu_nice_slope','cpu_system_slope','cpu_iowait_slope','cpu_steal_slope','cpu_idle_slope','mem_used','mem_free','mem_shared','mem_buffers','mem_cached','swap_used','swap_free','cpu_user','cpu_nice','cpu_system','cpu_iowait','cpu_steal','cpu_idle']
+columns = ['RTTC','gen_time','n_th_slope','mem_used_slope','mem_free_slope','mem_shared_slope','mem_buffers_slope','mem_cached_slope','swap_used_slope','swap_free_slope','cpu_user_slope','cpu_nice_slope','cpu_system_slope','cpu_iowait_slope','cpu_steal_slope','cpu_idle_slope','n_th','mem_used','mem_free','mem_shared','mem_buffers','mem_cached','swap_used','swap_free','cpu_user','cpu_nice','cpu_system','cpu_iowait','cpu_steal','cpu_idle']
 
 if len(sys.argv) < 3:
 	print "You must specify lambda_val and beta_vector"
@@ -11,10 +11,6 @@ if len(sys.argv) < 3:
 
 lambda_val = ast.literal_eval( sys.argv[1] )
 beta = ast.literal_eval( sys.argv[2] )
-
-#lambda_val = 1000000000
-
-#beta = [0.000000000000000,0.000000000000000,0.000000000000000,0.000000000000000,0.000000000000000,0.000000000000000,0.000000000000000,0.000000000000000,0.000000000000000,0.000000000000000,0.000000000000000,0.000000000000000,0.000000000000000,-0.000530753288597,0.004684694074252,0.000000000000000,0.000000000000000,0.000000000000000,0.000000000000000,0.000000000000000,0.000000000000000,0.000000000000000,0.000000000000000,0.000000000000000,0.000000000000000,0.000000000000000,0.000000000000000,0.000000000000000,0.000000000000000,0.004452930706776,0.005970519363663,-0.000010765365113,0.002628941938601,0.000000000000000,0.000000000000000,0.000000000000000,0.000000000000000,0.000000000000000,0.000000000000000]
 
 
 print "REDUCING DATASET WITH WEIGHTS FROM LAMBDA " + str(lambda_val)
@@ -57,6 +53,8 @@ with open('aggregated.csv') as csvfile:
 		row[columns[25]] = beta[24] * float(row[columns[25]])
 		row[columns[26]] = beta[25] * float(row[columns[26]])
 		row[columns[27]] = beta[26] * float(row[columns[27]])
+		row[columns[28]] = beta[27] * float(row[columns[28]])
+		row[columns[29]] = beta[28] * float(row[columns[29]])
 		lasso = 0.0
 		
 		for i in range(0,len(row)):
@@ -89,7 +87,6 @@ for row in data:
 	 
 
 # Generate another file without applying weights, but selecting same columns, for later training with WEKA
-
 
 filename = "csv/filtered-lambda-" + str(lambda_val) + ".csv"
 print "Saving only columns of interest to " + filename
@@ -127,4 +124,6 @@ with open('aggregated.csv') as csvfile:
 		row[columns[24]] = float(row[columns[24]])
 		row[columns[25]] = float(row[columns[25]])
 		row[columns[26]] = float(row[columns[26]])
+		row[columns[27]] = float(row[columns[27]])
+		row[columns[28]] = float(row[columns[28]])
 		wr.writerow(row)
