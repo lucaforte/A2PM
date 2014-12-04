@@ -32,6 +32,7 @@ void read_db_file(void) {
 	char *token;
 	bool datapoint_fully_filled = false;
 	unsigned int read_nodes = 0;
+	unsigned int line_count = 0;
 	
 	printf("Starting to parse input database...\n");
 	#ifdef VERBOSE
@@ -40,6 +41,8 @@ void read_db_file(void) {
 
 	while(fgets(line, MAX_LINE_LENGTH, in_file) != 0) {
 		
+		line_count++;
+				
 		#ifdef VERBOSE
 		printf("%s", line);
 		#endif
@@ -52,43 +55,44 @@ void read_db_file(void) {
 			continue;
 		}
 		
-		// Fill the data from the next datapoint	
+		// Fill the data from the next datapoint
 		token = strtok(line, ":");
 		if(strcmp(token, "Datapoint") == 0) {
 			
-			// Datapoint format contains just the time, so take is and convert it
-			a_new_point.key = strtod(strtok(NULL, ":"), NULL);
+			// Datapoint format contains the time and the number of active threads
+			sscanf(strtok(NULL, ":"), "%lf %d\n", &a_new_point.key,
+							     &a_new_point.n_th);
 			
 		} else if(strcmp(token, "Memory") == 0) {
 			
 			// Memory point is in the form:
 			// mem_used mem_free mem_shared mem_buffers mem_cached
 			sscanf(strtok(NULL, ":"), "%d %d %d %d %d %d\n", &a_new_point.mem_used, // First one is 'mem_total', which is of no interest
-									  &a_new_point.mem_used,
-								      &a_new_point.mem_free,
-								      &a_new_point.mem_shared,
-								      &a_new_point.mem_buffers,
-								      &a_new_point.mem_cached);
+									 &a_new_point.mem_used,
+									 &a_new_point.mem_free,
+									 &a_new_point.mem_shared,
+									 &a_new_point.mem_buffers,
+									 &a_new_point.mem_cached);
 			
 		} else if(strcmp(token, "Swap") == 0) {
 			
 			sscanf(strtok(NULL, ":"), "%d %d %d\n", &a_new_point.swap_used, // First one is 'swap_total', which is of no interest
-								      &a_new_point.swap_used,
-								      &a_new_point.swap_free);
+								&a_new_point.swap_used,
+								&a_new_point.swap_free);
 			
 		} else if(strcmp(token, "CPU") == 0) {
 			
 			sscanf(strtok(NULL, ":"), "%lf %lf %lf %lf %lf %lf\n", &a_new_point.cpu_user,
-									 &a_new_point.cpu_nice,
-									 &a_new_point.cpu_system,
-									 &a_new_point.cpu_iowait,
-									 &a_new_point.cpu_steal,
-									 &a_new_point.cpu_idle);
+									       &a_new_point.cpu_nice,
+									       &a_new_point.cpu_system,
+									       &a_new_point.cpu_iowait,
+									       &a_new_point.cpu_steal,
+									       &a_new_point.cpu_idle);
 			// This is the last entry of a datapoint
 			datapoint_fully_filled = true;
 			
 		} else {
-			fprintf(stderr, "Unknown token: %s\n", token);
+			fprintf(stderr, "Unknown token: '%s' at line %d\n", token, line_count);
 			exit(EXIT_FAILURE);
 		}
 
@@ -107,6 +111,7 @@ void read_db_file(void) {
 			#ifdef VERBOSE
 			printf("\tInserted new datapoint in run %d with content:\n"
 			       "\t\tTime: %f\n"
+			       "\t\tn_th: %d\n"
 			       "\t\tmem_used: %d\n"
 			       "\t\tmem_free: %d\n"
 			       "\t\tmem_shared: %d\n"
@@ -122,6 +127,7 @@ void read_db_file(void) {
 			       "\t\t:cpu_idle: %f\n",
 			       curr_run,
 			       new_node->key,
+			       new_node->n_th,
 			       new_node->mem_used,
 			       new_node->mem_free,
 			       new_node->mem_shared,
@@ -143,7 +149,6 @@ void read_db_file(void) {
 			bzero(&a_new_point, sizeof(struct node));
 			datapoint_fully_filled = false;
 		}
-		
 	}
 	
 	printf("Parsed %d run%s from database file with %d total datapoints.\n", curr_run, (curr_run > 1 ? "s" : ""), read_nodes);
@@ -185,7 +190,8 @@ void aggregate(void) {
 				// Compute the average generation time
 				aggregated.generation_time = (curr_node->key - aggregated.generation_time) / num_nodes;
 				
-				// Compute average values			
+				// Compute average values
+				aggregated.n_th /= num_nodes;		
 				aggregated.mem_used /= num_nodes;
 				aggregated.mem_free /= num_nodes;
 				aggregated.mem_shared /= num_nodes;
@@ -201,6 +207,7 @@ void aggregate(void) {
 				aggregated.cpu_idle /= num_nodes;
 				
 				// Finish to compute the slopes
+				aggregated.n_th_slope -= curr_node->n_th;
 				aggregated.mem_used_slope -= curr_node->mem_used;
 				aggregated.mem_free_slope -= curr_node->mem_free;
 				aggregated.mem_shared_slope -= curr_node->mem_shared;
@@ -242,6 +249,7 @@ void aggregate(void) {
 				printf("\tAggregated node %d generated with content:\n"
 				       "\t\tTime: %f\n"
 				       
+				       "\t\tn_th_slope: %f\n"
 				       "\t\tmem_used_slope: %f\n"
 				       "\t\tmem_free_slope: %f\n"
 				       "\t\tmem_shared_slope: %f\n"
@@ -256,6 +264,7 @@ void aggregate(void) {
 				       "\t\tcpu_steal_slope: %f\n"
 				       "\t\tcpu_idle_slope: %f\n"
 				       
+				       "\t\tn_th: %d\n"
 				       "\t\tmem_used: %d\n"
 				       "\t\tmem_free: %d\n"
 				       "\t\tmem_shared: %d\n"
@@ -272,6 +281,7 @@ void aggregate(void) {
 				       total_aggregated_nodes,
 				       new_node->key,
        				
+				       new_node->n_th_slope,
 				       new_node->mem_used_slope,
 				       new_node->mem_free_slope,
 				       new_node->mem_shared_slope,
@@ -286,6 +296,7 @@ void aggregate(void) {
 				       new_node->cpu_steal_slope,
 				       new_node->cpu_idle_slope,
 
+				       new_node->n_th,
 				       new_node->mem_used,
 				       new_node->mem_free,
 				       new_node->mem_shared,
@@ -316,6 +327,7 @@ void aggregate(void) {
 				
 				aggregated.generation_time = curr_node->key;
 				
+				aggregated.n_th_slope = curr_node->n_th;
 				aggregated.mem_used_slope = curr_node->mem_used;
 				aggregated.mem_free_slope = curr_node->mem_free;
 				aggregated.mem_shared_slope = curr_node->mem_shared;
@@ -333,6 +345,7 @@ void aggregate(void) {
 				compute_RTTC = false;
 			}
 			
+			aggregated.n_th += curr_node->n_th;
 			aggregated.mem_used += curr_node->mem_used;
 			aggregated.mem_free += curr_node->mem_free;
 			aggregated.mem_shared += curr_node->mem_shared;
@@ -365,6 +378,7 @@ void write_aggregated_file(void) {
 	
 	fprintf(out_file, "RTTC, "
 			  "GenTime, "
+			  "n_th_slope, "
 			  "mem_used_slope, "
 			  "mem_free_slope, "
 			  "mem_shared_slope, "
@@ -378,6 +392,7 @@ void write_aggregated_file(void) {
 			  "cpu_iowait_slope, "
 			  "cpu_steal_slope, "
 			  "cpu_idle_slope, "
+			  "n_th, "
 			  "mem_used, "
 			  "mem_free, "
 			  "mem_shared, "
@@ -395,12 +410,13 @@ void write_aggregated_file(void) {
 	curr_node = aggregated_datapoints->head;
 	while(curr_node != NULL) {
 		
-		fprintf(out_file, "%f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, "
-				  "%d, %d, %d, %d, %d, %d, %d, %f, %f, %f, %f, %f, %f\n",
+		fprintf(out_file, "%f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, "
+				  "%d, %d, %d, %d, %d, %d, %d, %d, %f, %f, %f, %f, %f, %f\n",
   				       curr_node->key,
   				       
   				       curr_node->generation_time,
-
+  				       
+  				       curr_node->n_th_slope,
 				       curr_node->mem_used_slope,
 				       curr_node->mem_free_slope,
 				       curr_node->mem_shared_slope,
@@ -415,6 +431,7 @@ void write_aggregated_file(void) {
 				       curr_node->cpu_steal_slope,
 				       curr_node->cpu_idle_slope,
 
+				       curr_node->n_th,
 				       curr_node->mem_used,
 				       curr_node->mem_free,
 				       curr_node->mem_shared,

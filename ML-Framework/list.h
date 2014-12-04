@@ -18,6 +18,7 @@ typedef struct node *list_link;
 struct node {
 	double key; // This is used differently: in input, is the elapsed time from VM start, in output is the RTTC
 	double generation_time; // This is used to keep track of the time taken to generate two consecutive datapoints by the feature monitor client
+	double n_th_slope;
 	double mem_used_slope;
 	double mem_free_slope;
 	double mem_shared_slope;
@@ -31,6 +32,7 @@ struct node {
 	double cpu_iowait_slope;
 	double cpu_steal_slope;
 	double cpu_idle_slope;
+	int n_th;
 	int mem_used;
 	int mem_free;
 	int mem_shared;
