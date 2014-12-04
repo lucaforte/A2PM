@@ -222,19 +222,19 @@ void aggregate(void) {
 				aggregated.cpu_steal_slope -= curr_node->cpu_steal;
 				aggregated.cpu_idle_slope -= curr_node->cpu_idle;
 				
-				aggregated.mem_used_slope /= num_nodes;
-				aggregated.mem_free_slope /= num_nodes;
-				aggregated.mem_shared_slope /= num_nodes;
-				aggregated.mem_buffers_slope /= num_nodes;
-				aggregated.mem_cached_slope /= num_nodes;
-				aggregated.swap_used_slope /= num_nodes;
-				aggregated.swap_free_slope /= num_nodes;
-				aggregated.cpu_user_slope /= num_nodes;
-				aggregated.cpu_nice_slope /= num_nodes;
-				aggregated.cpu_system_slope /= num_nodes;
-				aggregated.cpu_iowait_slope /= num_nodes;
-				aggregated.cpu_steal_slope /= num_nodes;
-				aggregated.cpu_idle_slope /= num_nodes;
+				aggregated.mem_used_slope /= -num_nodes;
+				aggregated.mem_free_slope /= -num_nodes;
+				aggregated.mem_shared_slope /= -num_nodes;
+				aggregated.mem_buffers_slope /= -num_nodes;
+				aggregated.mem_cached_slope /= -num_nodes;
+				aggregated.swap_used_slope /= -num_nodes;
+				aggregated.swap_free_slope /= -num_nodes;
+				aggregated.cpu_user_slope /= -num_nodes;
+				aggregated.cpu_nice_slope /= -num_nodes;
+				aggregated.cpu_system_slope /= -num_nodes;
+				aggregated.cpu_iowait_slope /= -num_nodes;
+				aggregated.cpu_steal_slope /= -num_nodes;
+				aggregated.cpu_idle_slope /= -num_nodes;
 				
 				struct node *new_node = malloc(sizeof(struct node));
 				memcpy(new_node, &aggregated, sizeof(struct node));
