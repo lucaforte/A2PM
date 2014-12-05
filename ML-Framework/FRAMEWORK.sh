@@ -9,16 +9,17 @@ lambdas=(100)
 WEKA_PATH="c:/Programmi/Weka-3-7/weka.jar"
 
 # What do we have to run?
-run_datapoint_aggregation=false
-run_lasso=false
-apply_lasso=false
-plot_original_parameters=false
-plot_lasso_as_predictor=false
+run_datapoint_aggregation=true
+run_lasso=true
+apply_lasso=true
+plot_original_parameters=true
+plot_lasso_as_predictor=true
 run_weka_linear=true
-run_weka_m5p=false
-run_weka_svm=false
-run_weka_svm2=false
-evaluate_error=false
+run_weka_m5p=true
+run_weka_svm=true
+run_weka_svm2=true
+run_weka_neural=true
+evaluate_error=true
 
 # This is a convenience step, not required for the actual learning
 replot_models=false
@@ -34,12 +35,7 @@ replot_models=false
 mkdir -p csv
 mkdir -p data
 mkdir -p error
-mkdir -p gnuplot/lasso
-mkdir -p gnuplot/linear
-mkdir -p gnuplot/m5p
-mkdir -p gnuplot/parameters
-mkdir -p gnuplot/svm
-mkdir -p gnuplot/svm2
+
 
 
 if [ "$run_datapoint_aggregation" = true ] ; then
@@ -264,6 +260,40 @@ if [ "$run_weka_svm2" = true ] ; then
 		gnuplot -e "the_title='svm2/$name'" plot.plt
 	
 		mv data.dat data/svm2-$name.dat
+	done
+fi
+
+
+if [ "$run_weka_neural" = true ] ; then
+	echo "***************************"
+	echo "***   NEURAL NETWORKS   ***"
+	echo "***************************"
+
+	echo "" > data.dat
+	echo "" > error/neural-error.txt
+	
+	mkdir -p gnuplot/neural
+
+	for f in csv/filtered-*; do
+
+		name=$(echo $f | sed -e 's/.*filtered-//g')
+		name=$(echo $name | sed -e 's/\.csv//g')
+	
+		echo "Computing error for $name"
+		
+		echo $name >> error/neural-error.txt
+	
+		java -classpath "$WEKA_PATH"  weka.classifiers.functions.MultilayerPerceptron -L 0.3 -M 0.2 -N 500 -V 0 -S 0 -E 20 -H a -G -R -c first -d model >> error/neural-error.txt 
+		
+		echo "Generating datapoints for $name"
+	
+		java -classpath "$WEKA_PATH"  weka.classifiers.functions.MultilayerPerceptron -l model -T $f -c first -o -classifications weka.classifiers.evaluation.output.prediction.PlainText | sed -n '/=== Predictions under cross-validation ===/,$p' 2>/dev/null | tail -n +4 | sed -e's/  */ /g' | sed -e 's/^ //g' | sed -e 's/ /\t/g' > data.dat
+	
+		echo "Generating plot for $name"
+	
+		gnuplot -e "the_title='neural/$name'" plot.plt
+	
+		mv data.dat data/neural-$name.dat
 	done
 fi
 
