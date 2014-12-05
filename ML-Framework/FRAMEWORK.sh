@@ -4,21 +4,24 @@
 
 # Framework Configuration
 database_file=db.txt
-lambdas=(0.1  1  10  100  1000  10000  100000  1000000 10000000 100000000 1000000000)
+lambdas=(100)
+#lambdas=(0 0.1  1  10  100  1000  10000  100000  1000000 10000000 100000000 1000000000)
 WEKA_PATH="c:/Programmi/Weka-3-7/weka.jar"
 
 # What do we have to run?
-run_datapoint_aggregation=true
-run_lasso=true
-plot_original_parameters=true
-plot_lasso_as_predictor=true
+run_datapoint_aggregation=false
+run_lasso=false
+apply_lasso=false
+plot_original_parameters=false
+plot_lasso_as_predictor=false
 run_weka_linear=true
-run_weka_m5p=true
-run_weka_svm=true
-run_weka_svm2=true
-evaluate_error=true
+run_weka_m5p=false
+run_weka_svm=false
+run_weka_svm2=false
+evaluate_error=false
 
-#replot_models=false
+# This is a convenience step, not required for the actual learning
+replot_models=false
 
 
 
@@ -49,8 +52,10 @@ if [ "$run_lasso" = true ] ; then
 		echo Generating beta vector for $lambda;
 		matlab -sd . -nodesktop -nosplash -wait -r "lasso($lambda)"
 	done
+fi
 	
 	
+if [ "$apply_lasso" = true ] ; then
 	echo "***************************"
 	echo "***   APPLYING WEIGHTS  ***"
 	echo "***************************"
@@ -127,17 +132,17 @@ if [ "$run_weka_linear" = true ] ; then
 	
 		echo $name >> error/linear-error.txt
 	
-		java -classpath "$WEKA_PATH" weka.classifiers.functions.LinearRegression -t $f -S 0 -R 1.0E-8 -c first >> error/linear-error.txt
+		java -classpath "$WEKA_PATH" weka.classifiers.functions.LinearRegression -t $f -S 0 -R 1.0E-8 -c first -d model >> error/linear-error.txt
 	
 		echo "Generating datapoints for $name"
 
-		java -classpath "$WEKA_PATH"  weka.classifiers.functions.LinearRegression -t $f -S 0 -R 1.0E-8 -c first -o -classifications weka.classifiers.evaluation.output.prediction.PlainText | sed -n '/=== Predictions under cross-validation ===/,$p' 2>/dev/null | tail -n +4 | sed -e's/  */ /g' | sed -e 's/^ //g' | sed -e 's/ /\t/g' > data.dat
+		java -classpath "$WEKA_PATH"  weka.classifiers.functions.LinearRegression -l model -T $f -c first -o -classifications weka.classifiers.evaluation.output.prediction.PlainText | sed -n '/=== Predictions under cross-validation ===/,$p' 2>/dev/null | tail -n +4 | sed -e's/  */ /g' | sed -e 's/^ //g' | sed -e 's/ /\t/g' > data.dat
 	
 		echo "Generating plot for $name"
 	
-		gnuplot -e "the_title='linear/$name'" plot.plt
+		#gnuplot -e "the_title='linear/$name'" plot.plt
 	
-		mv data.dat data/linear-$name.dat
+		#mv data.dat data/linear-$name.dat
 	done
 fi
 
@@ -166,11 +171,11 @@ if [ "$run_weka_m5p" = true ] ; then
 		
 		echo $name >> error/m5p-error.txt
 	
-		java -classpath "$WEKA_PATH"  weka.classifiers.trees.M5P -t $f -M 4.0 -c first >> error/m5p-error.txt
+		java -classpath "$WEKA_PATH"  weka.classifiers.trees.M5P -t $f -M 4.0 -c first -d model >> error/m5p-error.txt
 		
 		echo "Generating datapoints for $name"
 
-		java -classpath "$WEKA_PATH"  weka.classifiers.trees.M5P -t $f -M 4.0 -c first -o -classifications weka.classifiers.evaluation.output.prediction.PlainText | sed -n '/=== Predictions under cross-validation ===/,$p' 2>/dev/null | tail -n +4 | sed -e's/  */ /g' | sed -e 's/^ //g' | sed -e 's/ /\t/g' > data.dat
+		java -classpath "$WEKA_PATH"  weka.classifiers.trees.M5P -l model -T $f -c first -o -classifications weka.classifiers.evaluation.output.prediction.PlainText | sed -n '/=== Predictions under cross-validation ===/,$p' 2>/dev/null | tail -n +4 | sed -e's/  */ /g' | sed -e 's/^ //g' | sed -e 's/ /\t/g' > data.dat
 	
 		echo "Generating plot for $name"
 	
@@ -202,11 +207,11 @@ if [ "$run_weka_svm" = true ] ; then
 		
 		echo $name >> error/svm-error.txt
 	
-		java -classpath "$WEKA_PATH"  weka.classifiers.functions.SMOreg -t $f -C 1.0 -N 0 -I "weka.classifiers.functions.supportVector.RegSMOImproved -T 0.001 -V -P 1.0E-12 -L 0.001 -W 1" -K "weka.classifiers.functions.supportVector.PolyKernel -E 1.0 -C 250007" -c first >> error/svm-error.txt 
+		java -classpath "$WEKA_PATH"  weka.classifiers.functions.SMOreg -t $f -C 1.0 -N 0 -I "weka.classifiers.functions.supportVector.RegSMOImproved -T 0.001 -V -P 1.0E-12 -L 0.001 -W 1" -K "weka.classifiers.functions.supportVector.PolyKernel -E 1.0 -C 250007" -c first -d model >> error/svm-error.txt 
 		
 		echo "Generating datapoints for $name"
 
-		java -classpath "$WEKA_PATH"  weka.classifiers.functions.SMOreg -t $f -C 1.0 -N 0 -I "weka.classifiers.functions.supportVector.RegSMOImproved -T 0.001 -V -P 1.0E-12 -L 0.001 -W 1" -K "weka.classifiers.functions.supportVector.PolyKernel -E 1.0 -C 250007" -c first -o -classifications weka.classifiers.evaluation.output.prediction.PlainText | sed -n '/=== Predictions under cross-validation ===/,$p' 2>/dev/null | tail -n +4 | sed -e's/  */ /g' | sed -e 's/^ //g' | sed -e 's/ /\t/g' > data.dat
+		java -classpath "$WEKA_PATH"  weka.classifiers.functions.SMOreg -l model -T $f -c first -o -classifications weka.classifiers.evaluation.output.prediction.PlainText | sed -n '/=== Predictions under cross-validation ===/,$p' 2>/dev/null | tail -n +4 | sed -e's/  */ /g' | sed -e 's/^ //g' | sed -e 's/ /\t/g' > data.dat
 	
 		echo "Generating plot for $name"
 	
@@ -237,11 +242,11 @@ if [ "$run_weka_svm2" = true ] ; then
 		
 		echo $name >> error/svm2-error.txt
 	
-		java -classpath "$WEKA_PATH"  weka.classifiers.functions.SMOreg -t $f -C 1.0 -N 0 -I "weka.classifiers.functions.supportVector.RegSMOImproved -T 0.001 -P 1.0E-12 -L 0.001 -W 1" -K "weka.classifiers.functions.supportVector.PolyKernel -E 1.0 -C 250007" -c first >> error/svm2-error.txt 
+		java -classpath "$WEKA_PATH"  weka.classifiers.functions.SMOreg -t $f -C 1.0 -N 0 -I "weka.classifiers.functions.supportVector.RegSMOImproved -T 0.001 -P 1.0E-12 -L 0.001 -W 1" -K "weka.classifiers.functions.supportVector.PolyKernel -E 1.0 -C 250007" -c first -d model >> error/svm2-error.txt 
 		
 		echo "Generating datapoints for $name"
 	
-		java -classpath "$WEKA_PATH"  weka.classifiers.functions.SMOreg -t $f -C 1.0 -N 0 -I "weka.classifiers.functions.supportVector.RegSMOImproved -T 0.001 -P 1.0E-12 -L 0.001 -W 1" -K "weka.classifiers.functions.supportVector.PolyKernel -E 1.0 -C 250007" -c first -o -classifications weka.classifiers.evaluation.output.prediction.PlainText | sed -n '/=== Predictions under cross-validation ===/,$p' 2>/dev/null | tail -n +4 | sed -e's/  */ /g' | sed -e 's/^ //g' | sed -e 's/ /\t/g' > data.dat
+		java -classpath "$WEKA_PATH"  weka.classifiers.functions.SMOreg -l model -T $f -c first -o -classifications weka.classifiers.evaluation.output.prediction.PlainText | sed -n '/=== Predictions under cross-validation ===/,$p' 2>/dev/null | tail -n +4 | sed -e's/  */ /g' | sed -e 's/^ //g' | sed -e 's/ /\t/g' > data.dat
 	
 		echo "Generating plot for $name"
 	
