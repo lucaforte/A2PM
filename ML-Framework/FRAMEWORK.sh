@@ -31,6 +31,17 @@ replot_models=false
 ##### DO NOT MODIFY BELOW THIS LINE ####
 
 
+mkdir -p csv
+mkdir -p data
+mkdir -p error
+mkdir -p gnuplot/lasso
+mkdir -p gnuplot/linear
+mkdir -p gnuplot/m5p
+mkdir -p gnuplot/parameters
+mkdir -p gnuplot/svm
+mkdir -p gnuplot/svm2
+
+
 if [ "$run_datapoint_aggregation" = true ] ; then
 	echo "***************************"
 	echo "***  AGGREGATING DATA   ***"
