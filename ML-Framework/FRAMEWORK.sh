@@ -125,32 +125,21 @@ if [ "$run_weka_linear" = true ] ; then
 	echo "***       LINEAR        ***"
 	echo "***************************"
 
-	echo "" > data.dat
-	echo "" > error/linear-error.txt
-	
 	mkdir -p gnuplot/linear
 
-	for f in csv/filtered-*; do
+	echo "Computing error for linear"
+	
+	java -classpath "$WEKA_PATH" weka.classifiers.functions.LinearRegression -t aggregated.csv -S 0 -R 1.0E-8 -c first -d model > error/linear-error.txt
+	
+	echo "Generating datapoints for linear"
 
-		name=$(echo $f | sed -e 's/.*filtered-//g')
-		name=$(echo $name | sed -e 's/\.csv//g')
+	java -classpath "$WEKA_PATH"  weka.classifiers.functions.LinearRegression -l model -T aggregated.csv -c first -o -classifications weka.classifiers.evaluation.output.prediction.PlainText > data.dat
 	
-		echo "Computing error for $name"
+	echo "Generating plot for linear"
 	
-		echo $name >> error/linear-error.txt
+	gnuplot -e "the_title='linear/linear'" plot.plt
 	
-		java -classpath "$WEKA_PATH" weka.classifiers.functions.LinearRegression -t $f -S 0 -R 1.0E-8 -c first -d model >> error/linear-error.txt
-	
-		echo "Generating datapoints for $name"
-
-		java -classpath "$WEKA_PATH"  weka.classifiers.functions.LinearRegression -l model -T $f -c first -o -classifications weka.classifiers.evaluation.output.prediction.PlainText | sed -n '/=== Predictions under cross-validation ===/,$p' 2>/dev/null | tail -n +4 | sed -e's/  */ /g' | sed -e 's/^ //g' | sed -e 's/ /\t/g' > data.dat
-	
-		echo "Generating plot for $name"
-	
-		#gnuplot -e "the_title='linear/$name'" plot.plt
-	
-		#mv data.dat data/linear-$name.dat
-	done
+	mv data.dat data/linear.dat
 fi
 
 
@@ -164,32 +153,21 @@ if [ "$run_weka_m5p" = true ] ; then
 	echo "***         M5P         ***"
 	echo "***************************"
 
-	echo "" > data.dat
-	echo "" > error/m5p-error.txt
-	
 	mkdir -p gnuplot/m5p
 
-	for f in csv/filtered-*; do
+	echo "Computing error for $name"
+	
+	java -classpath "$WEKA_PATH"  weka.classifiers.trees.M5P -t aggregated.csv -M 4.0 -c first -d model > error/m5p-error.txt
+	
+	echo "Generating datapoints for $name"
 
-		name=$(echo $f | sed -e 's/.*filtered-//g')
-		name=$(echo $name | sed -e 's/\.csv//g')
-	
-		echo "Computing error for $name"
-		
-		echo $name >> error/m5p-error.txt
-	
-		java -classpath "$WEKA_PATH"  weka.classifiers.trees.M5P -t $f -M 4.0 -c first -d model >> error/m5p-error.txt
-		
-		echo "Generating datapoints for $name"
+	java -classpath "$WEKA_PATH"  weka.classifiers.trees.M5P -l model -T aggregated.csv -c first -o -classifications weka.classifiers.evaluation.output.prediction.PlainText > data.dat
 
-		java -classpath "$WEKA_PATH"  weka.classifiers.trees.M5P -l model -T $f -c first -o -classifications weka.classifiers.evaluation.output.prediction.PlainText | sed -n '/=== Predictions under cross-validation ===/,$p' 2>/dev/null | tail -n +4 | sed -e's/  */ /g' | sed -e 's/^ //g' | sed -e 's/ /\t/g' > data.dat
-	
-		echo "Generating plot for $name"
-	
-		gnuplot -e "the_title='m5p/$name'" plot.plt
-	
-		mv data.dat data/m5p-$name.dat
-	done
+	echo "Generating plot for $name"
+
+	gnuplot -e "the_title='m5p/m5p'" plot.plt
+
+	mv data.dat data/m5p.dat
 
 fi
 
@@ -200,32 +178,21 @@ if [ "$run_weka_svm" = true ] ; then
 	echo "***        SVM          ***"
 	echo "***************************"
 
-	echo "" > data.dat
-	echo "" > error/svm-error.txt
-	
 	mkdir -p gnuplot/svm
 
-	for f in csv/filtered-*; do
+	echo "Computing error for $name"
+	
+	java -classpath "$WEKA_PATH"  weka.classifiers.functions.SMOreg -t aggregated.csv -C 1.0 -N 0 -I "weka.classifiers.functions.supportVector.RegSMOImproved -T 0.001 -V -P 1.0E-12 -L 0.001 -W 1" -K "weka.classifiers.functions.supportVector.PolyKernel -E 1.0 -C 250007" -c first -d model > error/svm-error.txt 
+	
+	echo "Generating datapoints for $name"
 
-		name=$(echo $f | sed -e 's/.*filtered-//g')
-		name=$(echo $name | sed -e 's/\.csv//g')
-	
-		echo "Computing error for $name"
-		
-		echo $name >> error/svm-error.txt
-	
-		java -classpath "$WEKA_PATH"  weka.classifiers.functions.SMOreg -t $f -C 1.0 -N 0 -I "weka.classifiers.functions.supportVector.RegSMOImproved -T 0.001 -V -P 1.0E-12 -L 0.001 -W 1" -K "weka.classifiers.functions.supportVector.PolyKernel -E 1.0 -C 250007" -c first -d model >> error/svm-error.txt 
-		
-		echo "Generating datapoints for $name"
+	java -classpath "$WEKA_PATH"  weka.classifiers.functions.SMOreg -l model -T aggregated.csv -c first -o -classifications weka.classifiers.evaluation.output.prediction.PlainText > data.dat
 
-		java -classpath "$WEKA_PATH"  weka.classifiers.functions.SMOreg -l model -T $f -c first -o -classifications weka.classifiers.evaluation.output.prediction.PlainText | sed -n '/=== Predictions under cross-validation ===/,$p' 2>/dev/null | tail -n +4 | sed -e's/  */ /g' | sed -e 's/^ //g' | sed -e 's/ /\t/g' > data.dat
-	
-		echo "Generating plot for $name"
-	
-		gnuplot -e "the_title='svm/$name'" plot.plt
-	
-		mv data.dat data/svm-$name.dat
-	done
+	echo "Generating plot for $name"
+
+	gnuplot -e "the_title='svm/$name'" plot.plt
+
+	mv data.dat data/svm.dat
 fi
 
 
@@ -235,32 +202,21 @@ if [ "$run_weka_svm2" = true ] ; then
 	echo "***       SVM 2         ***"
 	echo "***************************"
 
-	echo "" > data.dat
-	echo "" > error/svm2-error.txt
-	
 	mkdir -p gnuplot/svm2
 
-	for f in csv/filtered-*; do
+	echo "Computing error for $name"
+			
+	java -classpath "$WEKA_PATH"  weka.classifiers.functions.SMOreg -t aggregated.csv -C 1.0 -N 0 -I "weka.classifiers.functions.supportVector.RegSMOImproved -T 0.001 -P 1.0E-12 -L 0.001 -W 1" -K "weka.classifiers.functions.supportVector.PolyKernel -E 1.0 -C 250007" -c first -d model > error/svm2-error.txt 
+	
+	echo "Generating datapoints for $name"
 
-		name=$(echo $f | sed -e 's/.*filtered-//g')
-		name=$(echo $name | sed -e 's/\.csv//g')
-	
-		echo "Computing error for $name"
-		
-		echo $name >> error/svm2-error.txt
-	
-		java -classpath "$WEKA_PATH"  weka.classifiers.functions.SMOreg -t $f -C 1.0 -N 0 -I "weka.classifiers.functions.supportVector.RegSMOImproved -T 0.001 -P 1.0E-12 -L 0.001 -W 1" -K "weka.classifiers.functions.supportVector.PolyKernel -E 1.0 -C 250007" -c first -d model >> error/svm2-error.txt 
-		
-		echo "Generating datapoints for $name"
-	
-		java -classpath "$WEKA_PATH"  weka.classifiers.functions.SMOreg -l model -T $f -c first -o -classifications weka.classifiers.evaluation.output.prediction.PlainText | sed -n '/=== Predictions under cross-validation ===/,$p' 2>/dev/null | tail -n +4 | sed -e's/  */ /g' | sed -e 's/^ //g' | sed -e 's/ /\t/g' > data.dat
-	
-		echo "Generating plot for $name"
-	
-		gnuplot -e "the_title='svm2/$name'" plot.plt
-	
-		mv data.dat data/svm2-$name.dat
-	done
+	java -classpath "$WEKA_PATH"  weka.classifiers.functions.SMOreg -l model -T aggregated.csv -c first -o -classifications weka.classifiers.evaluation.output.prediction.PlainText > data.dat
+
+	echo "Generating plot for $name"
+
+	gnuplot -e "the_title='svm2/$name'" plot.plt
+
+	mv data.dat data/svm2.dat
 fi
 
 
@@ -274,27 +230,19 @@ if [ "$run_weka_neural" = true ] ; then
 	
 	mkdir -p gnuplot/neural
 
-	for f in csv/filtered-*; do
+	echo "Computing error for $name"
+	
+	java -classpath "$WEKA_PATH"  weka.classifiers.functions.MultilayerPerceptron -L 0.3 -M 0.2 -N 500 -V 0 -S 0 -E 20 -H a -G -R -t aggregated.csv -c first -d model >> error/neural-error.txt 
+	
+	echo "Generating datapoints for $name"
 
-		name=$(echo $f | sed -e 's/.*filtered-//g')
-		name=$(echo $name | sed -e 's/\.csv//g')
-	
-		echo "Computing error for $name"
-		
-		echo $name >> error/neural-error.txt
-	
-		java -classpath "$WEKA_PATH"  weka.classifiers.functions.MultilayerPerceptron -L 0.3 -M 0.2 -N 500 -V 0 -S 0 -E 20 -H a -G -R -c first -d model >> error/neural-error.txt 
-		
-		echo "Generating datapoints for $name"
-	
-		java -classpath "$WEKA_PATH"  weka.classifiers.functions.MultilayerPerceptron -l model -T $f -c first -o -classifications weka.classifiers.evaluation.output.prediction.PlainText | sed -n '/=== Predictions under cross-validation ===/,$p' 2>/dev/null | tail -n +4 | sed -e's/  */ /g' | sed -e 's/^ //g' | sed -e 's/ /\t/g' > data.dat
-	
-		echo "Generating plot for $name"
-	
-		gnuplot -e "the_title='neural/$name'" plot.plt
-	
-		mv data.dat data/neural-$name.dat
-	done
+	java -classpath "$WEKA_PATH"  weka.classifiers.functions.MultilayerPerceptron -l model -T aggregated.csv -c first -o -classifications weka.classifiers.evaluation.output.prediction.PlainText | sed -n '/=== Predictions under cross-validation ===/,$p' 2>/dev/null | tail -n +4 | sed -e's/  */ /g' | sed -e 's/^ //g' | sed -e 's/ /\t/g' > data.dat
+
+	echo "Generating plot for $name"
+
+	gnuplot -e "the_title='neural/$name'" plot.plt
+
+	mv data.dat data/neural.dat
 fi
 
 
