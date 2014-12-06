@@ -135,6 +135,8 @@ if [ "$run_weka_linear" = true ] ; then
 
 	java -classpath "$WEKA_PATH"  weka.classifiers.functions.LinearRegression -l model -T aggregated.csv -c first -o -classifications weka.classifiers.evaluation.output.prediction.PlainText > data.dat
 	
+	unlink model
+	
 	echo "Generating plot for linear"
 	
 	gnuplot -e "the_title='linear/linear'" plot.plt
@@ -155,15 +157,17 @@ if [ "$run_weka_m5p" = true ] ; then
 
 	mkdir -p gnuplot/m5p
 
-	echo "Computing error for $name"
+	echo "Computing error for M5P"
 	
 	java -classpath "$WEKA_PATH"  weka.classifiers.trees.M5P -t aggregated.csv -M 4.0 -c first -d model > error/m5p-error.txt
 	
-	echo "Generating datapoints for $name"
+	echo "Generating datapoints for M5P"
 
 	java -classpath "$WEKA_PATH"  weka.classifiers.trees.M5P -l model -T aggregated.csv -c first -o -classifications weka.classifiers.evaluation.output.prediction.PlainText > data.dat
+	
+	unlink model
 
-	echo "Generating plot for $name"
+	echo "Generating plot for M5P"
 
 	gnuplot -e "the_title='m5p/m5p'" plot.plt
 
@@ -180,17 +184,19 @@ if [ "$run_weka_svm" = true ] ; then
 
 	mkdir -p gnuplot/svm
 
-	echo "Computing error for $name"
+	echo "Computing error for SVM"
 	
 	java -classpath "$WEKA_PATH"  weka.classifiers.functions.SMOreg -t aggregated.csv -C 1.0 -N 0 -I "weka.classifiers.functions.supportVector.RegSMOImproved -T 0.001 -V -P 1.0E-12 -L 0.001 -W 1" -K "weka.classifiers.functions.supportVector.PolyKernel -E 1.0 -C 250007" -c first -d model > error/svm-error.txt 
 	
-	echo "Generating datapoints for $name"
+	echo "Generating datapoints for SVM"
 
 	java -classpath "$WEKA_PATH"  weka.classifiers.functions.SMOreg -l model -T aggregated.csv -c first -o -classifications weka.classifiers.evaluation.output.prediction.PlainText > data.dat
+	
+	unlink model
 
-	echo "Generating plot for $name"
+	echo "Generating plot for SVM"
 
-	gnuplot -e "the_title='svm/$name'" plot.plt
+	gnuplot -e "the_title='svm/svm'" plot.plt
 
 	mv data.dat data/svm.dat
 fi
@@ -204,17 +210,19 @@ if [ "$run_weka_svm2" = true ] ; then
 
 	mkdir -p gnuplot/svm2
 
-	echo "Computing error for $name"
+	echo "Computing error for SVM2"
 			
 	java -classpath "$WEKA_PATH"  weka.classifiers.functions.SMOreg -t aggregated.csv -C 1.0 -N 0 -I "weka.classifiers.functions.supportVector.RegSMOImproved -T 0.001 -P 1.0E-12 -L 0.001 -W 1" -K "weka.classifiers.functions.supportVector.PolyKernel -E 1.0 -C 250007" -c first -d model > error/svm2-error.txt 
 	
-	echo "Generating datapoints for $name"
+	echo "Generating datapoints for SVM2"
 
 	java -classpath "$WEKA_PATH"  weka.classifiers.functions.SMOreg -l model -T aggregated.csv -c first -o -classifications weka.classifiers.evaluation.output.prediction.PlainText > data.dat
+	
+	unlink model
 
-	echo "Generating plot for $name"
+	echo "Generating plot for SVM2"
 
-	gnuplot -e "the_title='svm2/$name'" plot.plt
+	gnuplot -e "the_title='svm2/svm2'" plot.plt
 
 	mv data.dat data/svm2.dat
 fi
@@ -230,17 +238,19 @@ if [ "$run_weka_neural" = true ] ; then
 	
 	mkdir -p gnuplot/neural
 
-	echo "Computing error for $name"
+	echo "Computing error for Neural Networks"
 	
 	java -classpath "$WEKA_PATH"  weka.classifiers.functions.MultilayerPerceptron -L 0.3 -M 0.2 -N 500 -V 0 -S 0 -E 20 -H a -G -R -t aggregated.csv -c first -d model >> error/neural-error.txt 
 	
-	echo "Generating datapoints for $name"
+	echo "Generating datapoints for Neural Networks"
 
-	java -classpath "$WEKA_PATH"  weka.classifiers.functions.MultilayerPerceptron -l model -T aggregated.csv -c first -o -classifications weka.classifiers.evaluation.output.prediction.PlainText | sed -n '/=== Predictions under cross-validation ===/,$p' 2>/dev/null | tail -n +4 | sed -e's/  */ /g' | sed -e 's/^ //g' | sed -e 's/ /\t/g' > data.dat
+	java -classpath "$WEKA_PATH"  weka.classifiers.functions.MultilayerPerceptron -l model -T aggregated.csv -c first -o -classifications weka.classifiers.evaluation.output.prediction.PlainText > data.dat
+	
+	unlink model
 
-	echo "Generating plot for $name"
+	echo "Generating plot for Neural Networks"
 
-	gnuplot -e "the_title='neural/$name'" plot.plt
+	gnuplot -e "the_title='neural/neural'" plot.plt
 
 	mv data.dat data/neural.dat
 fi
