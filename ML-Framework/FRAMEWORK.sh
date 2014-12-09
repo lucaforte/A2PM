@@ -4,8 +4,7 @@
 
 # Framework Configuration
 database_file=db.txt
-lambdas=(100)
-#lambdas=(0 0.1  1  10  100  1000  10000  100000  1000000 10000000 100000000 1000000000)
+lambdas=(1  10  100  1000  10000  100000  1000000 10000000 100000000 1000000000)
 WEKA_PATH="c:/Programmi/Weka-3-7/weka.jar"
 
 # What do we have to run?
@@ -52,7 +51,6 @@ if [ "$run_lasso" = true ] ; then
 	echo "***   LASSO GRAFTING    ***"
 	echo "***************************"
 	
-	echo "" > beta-vectors.txt
 	unlink beta-vectors.txt
 	
 	for lambda in "${lambdas[@]}"; do
@@ -261,28 +259,8 @@ if [ "$evaluate_error" = true ] ; then
 	echo "***       ERROR         ***"
 	echo "***************************"
 	
-	echo -e "Algorithm\tMAE\tSMAE\tSMAE_ABS" > error/errors.txt
-	
-	for f in data/*.dat; do
-		name=$(echo $f | sed -e 's/.*data\///g')
-		name=$(echo $name | sed -e 's/\.dat//g')
-		
-		error=$(./evaluateErrors.py $f)
-		
-		echo -e "$name\t$error" >> error/errors.txt
-	done
-
-
-	for f in csv/lasso-lambda*.csv; do
-		name=$(echo $f | sed -e 's/.*data\///g')
-		name=$(echo $name | sed -e 's/\.csv//g')
-		
-		error=$(./evaluateLassoErrors.py $f)
-		
-		echo -e "$name\t$error" >> error/errors.txt
-	done
-	
-	
+	./buildErrorTables.py
+	mv *.get.tex latex
 	
 	echo "All errors computed"
 	
