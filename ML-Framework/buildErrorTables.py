@@ -76,6 +76,8 @@ def formatName(string):
 		return "SVM"
 	elif(string == "svm2"):
 		return "SVM2"
+	elif(string == "reptree"):
+		return "REP Tree"
 	else:
 		return string
 

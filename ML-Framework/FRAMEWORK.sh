@@ -15,6 +15,7 @@ plot_original_parameters=true
 plot_lasso_as_predictor=true
 run_weka_linear=true
 run_weka_m5p=true
+run_weka_REPtree=true
 run_weka_svm=true
 run_weka_svm2=true
 run_weka_neural=true
@@ -175,6 +176,35 @@ if [ "$run_weka_m5p" = true ] ; then
 	gnuplot -e "the_title='m5p/m5p'" plot.plt
 
 	mv data.dat data/m5p.dat
+
+fi
+
+
+if [ "$run_weka_REPtree" = true ] ; then
+    
+	echo "***************************"
+	echo "***       REP Tree      ***"
+	echo "***************************"
+
+	mkdir -p gnuplot/reptree
+
+	echo "Computing error for REP Tree"
+	
+	java -classpath "$WEKA_PATH"  weka.classifiers.trees.REPTree -t aggregated.csv -M 2 -V 0.001 -N 3 -S 1 -L -1 -c first -d model > error/REPTree-error.txt
+	
+	echo "Generating datapoints for REP Tree"
+
+	java -classpath "$WEKA_PATH"  weka.classifiers.trees.REPTree -l model -T aggregated.csv -c first -o -classifications weka.classifiers.evaluation.output.prediction.PlainText > dat.dat
+	sed -e '1,5d' dat.dat > data.dat
+	unlink dat.dat
+	
+	unlink model
+
+	echo "Generating plot for REP Tree"
+
+	gnuplot -e "the_title='reptree/reptree'" plot.plt
+
+	mv data.dat data/reptree.dat
 
 fi
 
