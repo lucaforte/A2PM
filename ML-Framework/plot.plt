@@ -12,7 +12,7 @@ set output sprintf("gnuplot/%s.png",the_title)
 unset key
 
 set yrange [0:*]
-set xrange [0:9000]
+set xrange [0:*]
 
 rnd(x) = floor(x/30)*30
 
