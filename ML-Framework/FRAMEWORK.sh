@@ -8,17 +8,18 @@ lambdas=(1  10  100  1000  10000  100000  1000000 10000000 100000000 1000000000)
 WEKA_PATH="c:/Programmi/Weka-3-7/weka.jar"
 
 # What do we have to run?
-run_datapoint_aggregation=false
-run_lasso=false
-apply_lasso=false
-plot_original_parameters=false
-plot_lasso_as_predictor=false
+run_datapoint_aggregation=true
+run_lasso=true
+apply_lasso=true
+plot_original_parameters=true
+plot_lasso_as_predictor=true
 run_weka_linear=true
-run_weka_m5p=false
-run_weka_svm=false
-run_weka_svm2=false
-run_weka_neural=false
-evaluate_error=false
+run_weka_m5p=true
+run_weka_svm=true
+run_weka_svm2=true
+run_weka_neural=true
+evaluate_error=true
+generate_report=true
 
 # This is a convenience step, not required for the actual learning
 replot_models=false
@@ -271,10 +272,79 @@ if [ "$evaluate_error" = true ] ; then
 	echo "***************************"
 	
 	./buildErrorTables.py
-	mv *.get.tex latex
+	mv *.gen.tex latex
 	
 	echo "All errors computed"
 	
+fi
+
+
+
+if [ "$generate_report" = true ] ; then
+	echo "***************************"
+	echo "***  GENERATING REPORT  ***"
+	echo "***************************"
+	
+	echo "" > latex/gen_time.gen.tex
+	echo "" > latex/val_time.gen.tex
+	
+	echo "Extracting Generation and Validation Time"
+	for file in error/*.txt; do
+		title=$(basename $file)
+		title=${title%.*}
+		title=$(echo $title | sed 's/-error//g')
+		gen_time=$(cat $file | grep "Time taken to build model" | sed 's/.*: //' | sed 's/ seconds//')
+		val_time=$(cat $file | grep "Time taken to test model on training data" | sed 's/.*: //' | sed 's/ seconds//')
+		echo -e "$title\t&\t$gen_time\\\\\\" >> latex/gen_time.gen.tex
+		echo -e "$title\t&\t$val_time\\\\\\" >> latex/val_time.gen.tex
+	done
+	
+	echo "Extracting Lasso Parameters"
+	echo "" > latex/parameters.gen.tex
+	echo "" > latex/num_parameters.gen.tex
+	count=0
+	header_files=( csv/* )
+	grep beta beta-vectors.txt | while IFS= read -r line
+	do
+		head_count=0
+		line=$(echo ${line:6:${#line}} | sed 's/\]//')
+		line=( ${line//,/ } )
+		header_string=$(head -n 1 ${header_files[$count]} | sed 's/.*"RTTC",//' | sed 's/_/\\_/g' | sed 's/\"//g' )
+		lambda=$(basename ${header_files[$count]})
+		lambda=${lambda%.*}
+		lambda=$(echo $lambda | sed 's/lasso-lambda-//g')
+		lambda=$(echo "l($lambda)/l(10)" | bc -l | sed 's/\..*//')
+		
+		echo "Getting non-zero parameters for lambda 10^$lambda..."
+		
+		# Generate latex header for table
+		echo "\\paragraph{\$\\lambda = 10^{$lambda}\$}" >> latex/parameters.gen.tex
+		echo "\begin{center} \begin{tabular}{cc} \toprule parameter & weight \\\\ \midrule" >> latex/parameters.gen.tex
+		
+		# Do actual matching
+		headers=( ${header_string//,/ } )
+		for parameter in "${line[@]}"; do
+			if [ $(echo " $parameter != 0" | bc) -eq 1 ]; then
+				echo -e "\\\\tt ${headers[$head_count]}\t&\t$parameter\\\\\\" >> latex/parameters.gen.tex
+				let head_count=head_count+1
+			fi
+		done
+		echo -e "\$\\lambda = 10^{$lambda}\$ \t&\t $head_count \\\\\\" >> latex/num_parameters.gen.tex
+		let count=count+1
+		
+		# Generate latex footer for table
+		echo "\bottomrule" >> latex/parameters.gen.tex
+		echo "\end{tabular} \end{center}" >> latex/parameters.gen.tex
+		echo "" >> latex/parameters.gen.tex
+	done	
+	
+	echo "Building Report..."
+	
+	today=$(date "+%Y-%m-%d")
+	
+	cd latex; pdflatex report.tex; mv report.pdf report-$today.pdf; rm *.log; rm *.aux; unlink report.pdf
+	
+	echo "Report built in latex/report-$today.pdf"
 fi
 
 

@@ -62,7 +62,7 @@ def formatLassoName(string):
 	else:
 		value = "10^" + str(int(math.log10(number)))
 	
-	return "Lasso ($lambda = " + value + "$)"
+	return "Lasso ($\lambda = " + value + "$)"
 	
 	
 def formatName(string):
@@ -121,7 +121,7 @@ def RAPE():
 			sum_numerator_RAPE=sum_numerator_RAPE+abs(dp.predicted - dp.real)
 			sum_denominator_RAPE=sum_denominator_RAPE+abs(average_real_values_RAPE - dp.real)
 		
-		out_file.write(formatName(os.path.splitext(f)[0]) + "\t&\t" + str(sum_numerator_RAPE / sum_denominator_RAPE * 100) + "\\\\\n")
+		out_file.write(formatName(os.path.splitext(f)[0]) + "\t&\t" + str(sum_numerator_RAPE / sum_denominator_RAPE * 100) + "\\% \\\\\n")
 	
 	for f in lassofiles:
 		datapoints = readLassoFile("csv/" + f)
@@ -137,7 +137,7 @@ def RAPE():
 			sum_numerator_RAPE = sum_numerator_RAPE+abs(dp.predicted - dp.real)
 			sum_denominator_RAPE = sum_denominator_RAPE+abs(average_real_values_RAPE - dp.real)
 		
-		out_file.write(formatLassoName(os.path.splitext(f)[0]) + "\t&\t" + str(sum_numerator_RAPE / sum_denominator_RAPE * 100) + "\\\\\n")
+		out_file.write(formatLassoName(os.path.splitext(f)[0]) + "\t&\t" + str(sum_numerator_RAPE / sum_denominator_RAPE * 100) + "\\% \\\\\n")
 		
 	out_file.close()
 
