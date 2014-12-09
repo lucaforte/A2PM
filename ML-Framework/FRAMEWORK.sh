@@ -8,17 +8,17 @@ lambdas=(1  10  100  1000  10000  100000  1000000 10000000 100000000 1000000000)
 WEKA_PATH="c:/Programmi/Weka-3-7/weka.jar"
 
 # What do we have to run?
-run_datapoint_aggregation=true
-run_lasso=true
-apply_lasso=true
-plot_original_parameters=true
-plot_lasso_as_predictor=true
+run_datapoint_aggregation=false
+run_lasso=false
+apply_lasso=false
+plot_original_parameters=false
+plot_lasso_as_predictor=false
 run_weka_linear=true
-run_weka_m5p=true
-run_weka_svm=true
-run_weka_svm2=true
-run_weka_neural=true
-evaluate_error=true
+run_weka_m5p=false
+run_weka_svm=false
+run_weka_svm2=false
+run_weka_neural=false
+evaluate_error=false
 
 # This is a convenience step, not required for the actual learning
 replot_models=false
@@ -98,6 +98,8 @@ if [ "$plot_original_parameters" = true ] ; then
 fi
 
 
+
+
 if [ "$plot_lasso_as_predictor" = true ] ; then
 	echo "***************************"
 	echo "***   PLOTTING LASSO    ***"
@@ -115,7 +117,6 @@ fi
 
 
 
-######## DO STUFF FOR LINEAR MODELS
 
 if [ "$run_weka_linear" = true ] ; then
 
@@ -131,7 +132,9 @@ if [ "$run_weka_linear" = true ] ; then
 	
 	echo "Generating datapoints for linear"
 
-	java -classpath "$WEKA_PATH"  weka.classifiers.functions.LinearRegression -l model -T aggregated.csv -c first -o -classifications weka.classifiers.evaluation.output.prediction.PlainText > data.dat
+	java -classpath "$WEKA_PATH"  weka.classifiers.functions.LinearRegression -l model -T aggregated.csv -c first -o -classifications weka.classifiers.evaluation.output.prediction.PlainText > dat.dat
+	sed -e '1,5d' dat.dat > data.dat
+	unlink dat.dat
 	
 	unlink model
 	
@@ -145,7 +148,6 @@ fi
 
 
 
-######## DO STUFF FOR M5P
 
 if [ "$run_weka_m5p" = true ] ; then
     
@@ -161,7 +163,9 @@ if [ "$run_weka_m5p" = true ] ; then
 	
 	echo "Generating datapoints for M5P"
 
-	java -classpath "$WEKA_PATH"  weka.classifiers.trees.M5P -l model -T aggregated.csv -c first -o -classifications weka.classifiers.evaluation.output.prediction.PlainText > data.dat
+	java -classpath "$WEKA_PATH"  weka.classifiers.trees.M5P -l model -T aggregated.csv -c first -o -classifications weka.classifiers.evaluation.output.prediction.PlainText > dat.dat
+	sed -e '1,5d' dat.dat > data.dat
+	unlink dat.dat
 	
 	unlink model
 
@@ -188,7 +192,9 @@ if [ "$run_weka_svm" = true ] ; then
 	
 	echo "Generating datapoints for SVM"
 
-	java -classpath "$WEKA_PATH"  weka.classifiers.functions.SMOreg -l model -T aggregated.csv -c first -o -classifications weka.classifiers.evaluation.output.prediction.PlainText > data.dat
+	java -classpath "$WEKA_PATH"  weka.classifiers.functions.SMOreg -l model -T aggregated.csv -c first -o -classifications weka.classifiers.evaluation.output.prediction.PlainText > dat.dat
+	sed -e '1,5d' dat.dat > data.dat
+	unlink dat.dat
 	
 	unlink model
 
@@ -214,7 +220,9 @@ if [ "$run_weka_svm2" = true ] ; then
 	
 	echo "Generating datapoints for SVM2"
 
-	java -classpath "$WEKA_PATH"  weka.classifiers.functions.SMOreg -l model -T aggregated.csv -c first -o -classifications weka.classifiers.evaluation.output.prediction.PlainText > data.dat
+	java -classpath "$WEKA_PATH"  weka.classifiers.functions.SMOreg -l model -T aggregated.csv -c first -o -classifications weka.classifiers.evaluation.output.prediction.PlainText > dat.dat
+	sed -e '1,5d' dat.dat > data.dat
+	unlink dat.dat
 	
 	unlink model
 
@@ -242,7 +250,9 @@ if [ "$run_weka_neural" = true ] ; then
 	
 	echo "Generating datapoints for Neural Networks"
 
-	java -classpath "$WEKA_PATH"  weka.classifiers.functions.MultilayerPerceptron -l model -T aggregated.csv -c first -o -classifications weka.classifiers.evaluation.output.prediction.PlainText > data.dat
+	java -classpath "$WEKA_PATH"  weka.classifiers.functions.MultilayerPerceptron -l model -T aggregated.csv -c first -o -classifications weka.classifiers.evaluation.output.prediction.PlainText > dat.dat
+	sed -e '1,5d' dat.dat > data.dat
+	unlink dat.dat
 	
 	unlink model
 
@@ -252,6 +262,7 @@ if [ "$run_weka_neural" = true ] ; then
 
 	mv data.dat data/neural.dat
 fi
+
 
 
 if [ "$evaluate_error" = true ] ; then
