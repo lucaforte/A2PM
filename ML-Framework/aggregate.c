@@ -222,6 +222,7 @@ void aggregate(void) {
 				aggregated.cpu_steal_slope -= curr_node->cpu_steal;
 				aggregated.cpu_idle_slope -= curr_node->cpu_idle;
 				
+				aggregated.n_th_slope /= -1.0 * num_nodes;
 				aggregated.mem_used_slope /= -1.0 * num_nodes;
 				aggregated.mem_free_slope /= -1.0 * num_nodes;
 				aggregated.mem_shared_slope /= -1.0 * num_nodes;
