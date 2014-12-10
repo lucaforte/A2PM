@@ -7,6 +7,7 @@ set key outside;
 set key right top;
 
 set xrange [0:*]
+set yrange [0:*]
 
 
 set xlabel 'Remaining Time to Threshold Hit (seconds)'
@@ -17,8 +18,7 @@ set datafile separator ","
 
 rnd(x) = floor(x/30)*30
 
-plot	sprintf("csv/%s.csv",the_title)   using (rnd($1)):2 smooth unique t col,\
-	''   using (rnd($1)):3 smooth unique t col,\
+plot	sprintf("csv/%s.csv",the_title)  using (rnd($1)):3 smooth unique t col,\
 	''   using (rnd($1)):4 smooth unique t col,\
 	''   using (rnd($1)):5 smooth unique t col,\
 	''   using (rnd($1)):6 smooth unique t col,\

@@ -8,6 +8,7 @@ lambdas=(1  10  100  1000  10000  100000  1000000 10000000 100000000 1000000000)
 WEKA_PATH="c:/Programmi/Weka-3-7/weka.jar"
 
 # What do we have to run?
+purge_old_data=true
 run_datapoint_aggregation=true
 run_lasso=true
 apply_lasso=true
@@ -33,10 +34,19 @@ replot_models=false
 ##### DO NOT MODIFY BELOW THIS LINE ####
 
 
+# Preliminary setup steps
+
+if [ "$run_datapoint_aggregation" = true ] ; then
+	rm -rf csv
+	rm -rf data
+	rm -rf error
+	rm -rf gnuplot
+	rm latex/*.gen.tex
+fi
+
 mkdir -p csv
 mkdir -p data
 mkdir -p error
-
 
 
 if [ "$run_datapoint_aggregation" = true ] ; then
@@ -53,7 +63,7 @@ if [ "$run_lasso" = true ] ; then
 	echo "***   LASSO GRAFTING    ***"
 	echo "***************************"
 	
-	unlink beta-vectors.txt
+	echo "" > beta-vectors.txt
 	
 	for lambda in "${lambdas[@]}"; do
 		echo Generating beta vector for $lambda;
@@ -89,12 +99,14 @@ if [ "$plot_original_parameters" = true ] ; then
 	echo "*** PLOTTING PARAMETERS ***"
 	echo "***************************"
 	
-	for lambda in "${lambdas[@]}"; do
+	mkdir -p gnuplot/parameters
 	
-		echo "Plotting parameters for lambda $lambda"
+	#for lambda in "${lambdas[@]}"; do
+	
+	#	echo "Plotting parameters for lambda $lambda"
 		
-		gnuplot -e "the_title='filtered-lambda-$lambda'" plot_parameters.plt
-	done
+	#	gnuplot -e "the_title='lasso-lambda-$lambda'" plot_parameters.plt
+	#done
 	
 	gnuplot plot_all_parameters.plt
 fi
@@ -277,7 +289,7 @@ if [ "$run_weka_neural" = true ] ; then
 
 	echo "Computing error for Neural Networks"
 	
-	java -classpath "$WEKA_PATH"  weka.classifiers.functions.MultilayerPerceptron -L 0.3 -M 0.2 -N 500 -V 0 -S 0 -E 20 -H a -G -R -t aggregated.csv -c first -d model >> error/neural-error.txt 
+	java -classpath "$WEKA_PATH"  weka.classifiers.functions.MultilayerPerceptron -L 0.3 -M 0.2 -N 500 -V 0 -S 0 -E 20 -H a -R -t aggregated.csv -c first -d model >> error/neural-error.txt 
 	
 	echo "Generating datapoints for Neural Networks"
 
