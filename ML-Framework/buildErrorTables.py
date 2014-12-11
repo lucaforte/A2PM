@@ -71,7 +71,7 @@ def formatName(string):
 	elif(string == "m5p"):
 		return "M5P"
 	elif(string == "neural"):
-		return "Neural Netowrks"
+		return "Neural Networks"
 	elif(string == "svm"):
 		return "SVM"
 	elif(string == "svm2"):
