@@ -13,7 +13,7 @@ set xrange [0:*]
 set title the_title
 set datafile separator ","
 
-set xlabel "RTTC (seconds)"
+set xlabel "RTTC/RTTH (seconds)"
 set ylabel "Predicted RTTC (seconds)"
 
 rnd(x) = floor(x/10)*10

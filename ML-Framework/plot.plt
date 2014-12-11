@@ -18,7 +18,7 @@ rnd(x) = floor(x/30)*30
 
 set title the_title
 
-set xlabel "RTTH (seconds)"
+set xlabel "RTTC/RTTH (seconds)"
 set ylabel "Predicted RTTH (seconds)"
 
 plot	'data.dat'	using (rnd($2)):($3) smooth unique,\
