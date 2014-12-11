@@ -350,6 +350,7 @@ if [ "$generate_report" = true ] ; then
 	echo "Extracting Lasso Parameters"
 	echo "" > latex/parameters.gen.tex
 	echo "" > latex/num_parameters.gen.tex
+	echo "" > LassoParameters.dat
 	count=0
 	header_files=( csv/* )
 	grep beta beta-vectors.txt | while IFS= read -r line
@@ -361,6 +362,7 @@ if [ "$generate_report" = true ] ; then
 		lambda=$(basename ${header_files[$count]})
 		lambda=${lambda%.*}
 		lambda=$(echo $lambda | sed 's/lasso-lambda-//g')
+		lambda_full=$lambda
 		lambda=$(echo "l($lambda)/l(10)" | bc -l | sed 's/\..*//')
 		
 		echo "Getting non-zero parameters for lambda 10^$lambda..."
@@ -378,15 +380,19 @@ if [ "$generate_report" = true ] ; then
 			fi
 		done
 		echo -e "\$\\lambda = 10^{$lambda}\$ \t&\t $head_count \\\\\\" >> latex/num_parameters.gen.tex
+		echo -e "$lambda_full \t $head_count" >> LassoParameters.dat
 		let count=count+1
 		
 		# Generate latex footer for table
 		echo "\bottomrule" >> latex/parameters.gen.tex
 		echo "\end{tabular} \end{center}" >> latex/parameters.gen.tex
 		echo "" >> latex/parameters.gen.tex
-	done	
+	done
 	
 	echo "Building Report..."
+	
+	gnuplot LassoParameters.plt
+	unlink LassoParameters.dat
 	
 	today=$(date "+%Y-%m-%d")
 	
