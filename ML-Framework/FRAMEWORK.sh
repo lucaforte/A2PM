@@ -6,6 +6,12 @@
 database_file=db.txt
 lambdas=(1  10  100  1000  10000  100000  1000000 10000000 100000000 1000000000)
 WEKA_PATH="c:/Programmi/Weka-3-7/weka.jar"
+# Valid values for the algorithm are: 
+#   grafting
+#   iteratedRidge
+#   nonNegativeSquared
+#   shooting
+lasso_algorithm="iteratedRidge"
 
 # What do we have to run?
 purge_old_data=true
@@ -60,14 +66,14 @@ fi
 
 if [ "$run_lasso" = true ] ; then
 	echo "***************************"
-	echo "***   LASSO GRAFTING    ***"
+	echo "*** LASSO LINEARIZATION ***"
 	echo "***************************"
 	
 	echo "" > beta-vectors.txt
 	
 	for lambda in "${lambdas[@]}"; do
 		echo Generating beta vector for $lambda;
-		matlab -sd . -nodesktop -nosplash -wait -r "lasso($lambda)"
+		matlab -sd . -nodesktop -nosplash -wait -r "lasso('$lasso_algorithm', $lambda)"
 	done
 fi
 	
