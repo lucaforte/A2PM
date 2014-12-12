@@ -30,6 +30,7 @@ evaluate_error=true
 generate_report=true
 
 # This is a convenience step, not required for the actual learning
+# It simply replots everything, in case the plt scripts are modified
 replot_models=false
 
 
@@ -107,12 +108,12 @@ if [ "$plot_original_parameters" = true ] ; then
 	
 	mkdir -p gnuplot/parameters
 	
-	#for lambda in "${lambdas[@]}"; do
+	for lambda in "${lambdas[@]}"; do
 	
-	#	echo "Plotting parameters for lambda $lambda"
+		echo "Plotting parameters for lambda $lambda"
 		
-	#	gnuplot -e "the_title='lasso-lambda-$lambda'" plot_parameters.plt
-	#done
+		gnuplot -e "the_title='lasso-lambda-$lambda'" plot_parameters.plt
+	done
 	
 	gnuplot plot_all_parameters.plt
 fi
