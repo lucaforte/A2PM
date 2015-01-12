@@ -6,6 +6,12 @@
 database_file=db.txt
 lambdas=(1  10  100  1000  10000  100000  1000000 10000000 100000000 1000000000)
 WEKA_PATH="c:/Programmi/Weka-3-7/weka.jar"
+# Valid values for the algorithm are: 
+#   grafting
+#   iteratedRidge
+#   nonNegativeSquared
+#   shooting
+lasso_algorithm="iteratedRidge"
 
 # What do we have to run?
 purge_old_data=true
@@ -24,6 +30,7 @@ evaluate_error=true
 generate_report=true
 
 # This is a convenience step, not required for the actual learning
+# It simply replots everything, in case the plt scripts are modified
 replot_models=false
 
 
@@ -60,14 +67,14 @@ fi
 
 if [ "$run_lasso" = true ] ; then
 	echo "***************************"
-	echo "***   LASSO GRAFTING    ***"
+	echo "*** LASSO LINEARIZATION ***"
 	echo "***************************"
 	
 	echo "" > beta-vectors.txt
 	
 	for lambda in "${lambdas[@]}"; do
 		echo Generating beta vector for $lambda;
-		matlab -sd . -nodesktop -nosplash -wait -r "lasso($lambda)"
+		matlab -sd . -nodesktop -nosplash -wait -r "lasso('$lasso_algorithm', $lambda)"
 	done
 fi
 	
@@ -101,12 +108,12 @@ if [ "$plot_original_parameters" = true ] ; then
 	
 	mkdir -p gnuplot/parameters
 	
-	#for lambda in "${lambdas[@]}"; do
+	for lambda in "${lambdas[@]}"; do
 	
-	#	echo "Plotting parameters for lambda $lambda"
+		echo "Plotting parameters for lambda $lambda"
 		
-	#	gnuplot -e "the_title='lasso-lambda-$lambda'" plot_parameters.plt
-	#done
+		gnuplot -e "the_title='lasso-lambda-$lambda'" plot_parameters.plt
+	done
 	
 	gnuplot plot_all_parameters.plt
 fi
@@ -344,6 +351,7 @@ if [ "$generate_report" = true ] ; then
 	echo "Extracting Lasso Parameters"
 	echo "" > latex/parameters.gen.tex
 	echo "" > latex/num_parameters.gen.tex
+	echo "" > LassoParameters.dat
 	count=0
 	header_files=( csv/* )
 	grep beta beta-vectors.txt | while IFS= read -r line
@@ -355,6 +363,7 @@ if [ "$generate_report" = true ] ; then
 		lambda=$(basename ${header_files[$count]})
 		lambda=${lambda%.*}
 		lambda=$(echo $lambda | sed 's/lasso-lambda-//g')
+		lambda_full=$lambda
 		lambda=$(echo "l($lambda)/l(10)" | bc -l | sed 's/\..*//')
 		
 		echo "Getting non-zero parameters for lambda 10^$lambda..."
@@ -372,15 +381,19 @@ if [ "$generate_report" = true ] ; then
 			fi
 		done
 		echo -e "\$\\lambda = 10^{$lambda}\$ \t&\t $head_count \\\\\\" >> latex/num_parameters.gen.tex
+		echo -e "$lambda_full \t $head_count" >> LassoParameters.dat
 		let count=count+1
 		
 		# Generate latex footer for table
 		echo "\bottomrule" >> latex/parameters.gen.tex
 		echo "\end{tabular} \end{center}" >> latex/parameters.gen.tex
 		echo "" >> latex/parameters.gen.tex
-	done	
+	done
 	
 	echo "Building Report..."
+	
+	gnuplot LassoParameters.plt
+	unlink LassoParameters.dat
 	
 	today=$(date "+%Y-%m-%d")
 	

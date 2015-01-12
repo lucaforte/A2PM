@@ -15,15 +15,15 @@
 
 The trend of System Parameters as captured by the data collection is here reported:
 
-\begin{figure}[!ht]
-\includegraphics[width=\textwidth]{../gnuplot/parameters/all.png}
-\caption{System Parameters}
-\label{sys-parms}
-\end{figure}
-
+\begin{center}
+\includegraphics[width=0.8\textwidth]{../gnuplot/parameters/all.png}
+\end{center}
 
 
 \section{Parameters Selected by Lasso}
+
+This Section shows the number of parameters selected by Lasso regularization.
+Additionally, tables present the specific weights assigned by the regularization process.
 
 \begin{center}
 \begin{tabular}{cc}
@@ -33,6 +33,10 @@ $\lambda$ & \# Parameters \\
 \input{num_parameters.gen.tex}
 \bottomrule
 \end{tabular}
+\end{center}
+
+\begin{center}
+\includegraphics[width=0.9\textwidth]{../gnuplot/lasso/SelectedParameters.png}
 \end{center}
 
 
@@ -178,37 +182,44 @@ The Validation Time represents the time needed to validate the accuracy of a mod
 
 \section{Fitted Models}
 
-\includegraphics[width=0.9\textwidth]{../gnuplot/lasso/lasso-lambda-1.png}
+In this Section we report fitted models for the various machine learning algorithm used
+by the Framework.
 
-\includegraphics[width=0.9\textwidth]{../gnuplot/lasso/lasso-lambda-10.png}
+Note that the set of parameters used for training is different: Lasso uses only a subset
+of parameters, namely the ones associated with non-zero weights in the $\beta$
+vector. On the other hand, the other algorithms rely on the whole set of input parameters.
 
-\includegraphics[width=0.9\textwidth]{../gnuplot/lasso/lasso-lambda-100.png}
+\includegraphics[width=0.8\textwidth]{../gnuplot/lasso/lasso-lambda-1.png}
 
-\includegraphics[width=0.9\textwidth]{../gnuplot/lasso/lasso-lambda-1000.png}
+\includegraphics[width=0.8\textwidth]{../gnuplot/lasso/lasso-lambda-10.png}
 
-\includegraphics[width=0.9\textwidth]{../gnuplot/lasso/lasso-lambda-10000.png}
+\includegraphics[width=0.8\textwidth]{../gnuplot/lasso/lasso-lambda-100.png}
 
-\includegraphics[width=0.9\textwidth]{../gnuplot/lasso/lasso-lambda-100000.png}
+\includegraphics[width=0.8\textwidth]{../gnuplot/lasso/lasso-lambda-1000.png}
 
-\includegraphics[width=0.9\textwidth]{../gnuplot/lasso/lasso-lambda-1000000.png}
+\includegraphics[width=0.8\textwidth]{../gnuplot/lasso/lasso-lambda-10000.png}
 
-\includegraphics[width=0.9\textwidth]{../gnuplot/lasso/lasso-lambda-10000000.png}
+\includegraphics[width=0.8\textwidth]{../gnuplot/lasso/lasso-lambda-100000.png}
 
-\includegraphics[width=0.9\textwidth]{../gnuplot/lasso/lasso-lambda-100000000.png}
+\includegraphics[width=0.8\textwidth]{../gnuplot/lasso/lasso-lambda-1000000.png}
 
-\includegraphics[width=0.9\textwidth]{../gnuplot/lasso/lasso-lambda-1000000000.png}
+\includegraphics[width=0.8\textwidth]{../gnuplot/lasso/lasso-lambda-10000000.png}
 
-\includegraphics[width=0.9\textwidth]{../gnuplot/linear/linear.png}
+\includegraphics[width=0.8\textwidth]{../gnuplot/lasso/lasso-lambda-100000000.png}
 
-\includegraphics[width=0.9\textwidth]{../gnuplot/m5p/m5p.png}
+\includegraphics[width=0.8\textwidth]{../gnuplot/lasso/lasso-lambda-1000000000.png}
 
-\includegraphics[width=0.9\textwidth]{../gnuplot/reptree/reptree.png}
+\includegraphics[width=0.8\textwidth]{../gnuplot/linear/linear.png}
 
-\includegraphics[width=0.9\textwidth]{../gnuplot/svm/svm.png}
+\includegraphics[width=0.8\textwidth]{../gnuplot/m5p/m5p.png}
 
-\includegraphics[width=0.9\textwidth]{../gnuplot/svm2/svm2.png}
+\includegraphics[width=0.8\textwidth]{../gnuplot/reptree/reptree.png}
 
-\includegraphics[width=0.9\textwidth]{../gnuplot/neural/neural.png}
+\includegraphics[width=0.8\textwidth]{../gnuplot/svm/svm.png}
+
+\includegraphics[width=0.8\textwidth]{../gnuplot/svm2/svm2.png}
+
+\includegraphics[width=0.8\textwidth]{../gnuplot/neural/neural.png}
 
 
 \end{document}

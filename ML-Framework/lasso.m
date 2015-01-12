@@ -1,4 +1,4 @@
-function lasso(LAMBDA)
+function lasso(algorithm, LAMBDA)
 
 X=dlmread('aggregated.csv',',',10,0);
 Y=X(:,1);
@@ -7,7 +7,20 @@ size(Y);
 size(X);
 
 setpath
-weights = LassoGrafting(X, Y, LAMBDA);
+
+if strcmp(algorithm, 'grafting') == 1
+	weights = LassoGrafting(X, Y, LAMBDA);
+elseif strcmp(algorithm, 'iteratedRidge') == 1
+	weights = LassoIteratedRidge(X, Y, LAMBDA);
+elseif strcmp(algorithm, 'nonNegativeSquared') == 1
+	weights = LassoNonNegativeSquared(X, Y, LAMBDA);
+elseif strcmp(algorithm, 'shooting') == 1
+	weights = LassoShooting(X, Y, LAMBDA);
+else
+	errordlg('Invalid Lasso Algorithm selected')
+	quit
+end
+
 weights_str = sprintf('%.15f,', weights);
 weights_str = weights_str(1:end-1);% strip final comma
 
