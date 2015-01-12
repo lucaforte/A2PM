@@ -20,7 +20,6 @@ char recv_buff[BUFSIZE];
 
 struct timeval initial_time;
 time_t now;
-
 void get_features(char *output){
 	FILE *t;
 	char *command;
@@ -30,8 +29,18 @@ void get_features(char *output){
 	float cpu_user,cpu_nice, cpu_system, cpu_iowait, cpu_steal, cpu_idle;
 	struct timeval curr_time;
 
+	char num_th[128];
+	FILE *pof;
+
+	pof = popen("ps -eLf | grep -v defunct | wc -l", "r");
+	if(pof == NULL)
+		abort();
+
+	fgets(num_th, sizeof(num_th)-1, pof);
+
+
 	gettimeofday(&curr_time, NULL);
-	sprintf(output, "Datapoint: %f\n", (double)curr_time.tv_sec - initial_time.tv_sec + (double)curr_time.tv_usec / 1000000 - (double)initial_time.tv_usec / 1000000);
+	sprintf(output, "Datapoint: %f %s", (double)curr_time.tv_sec - initial_time.tv_sec + (double)curr_time.tv_usec / 1000000 - (double)initial_time.tv_usec / 1000000, num_th);
 
 	command = "free > memdata.txt";
 	system(command);
@@ -61,18 +70,18 @@ void get_features(char *output){
 	command = "top -d 0.2 -b -n2 | grep \"Cpu(s)\" | tail -n 1 | sed 's/%/ /g' > cpudata.txt";
 	system(command);
 	t = fopen("cpudata.txt","r");
-/*	for(line = 1;line <= 1;line++){
+	/*	for(line = 1;line <= 1;line++){
 		int dont_stop = 1;
 		while(dont_stop){
 			fscanf(t,"%c",&ch);
 			if(ch=='\n')dont_stop = 0;
 		}
 	}
-	printf("%s\n", t);
-*/
-	fscanf(t,"Cpu(s): %f us, %f sy, %f ni, %f id, %f wa, %f hi, %f si, %f st",&cpu_user,&cpu_system,&cpu_nice,&cpu_idle, &cpu_iowait,&cpu_steal,&cpu_steal,&cpu_steal);
+	printf("%s\n", t);*/
+	fscanf(t," Cpu(s): %f us, %f sy, %f ni, %f id, %f wa, %f hi, %f si, %f st",&cpu_user,&cpu_system,&cpu_nice,&cpu_idle, &cpu_iowait,&cpu_steal,&cpu_steal,&cpu_steal);
 	sprintf(output,"%sCPU: %f %f %f %f %f %f",output,cpu_user,cpu_nice,cpu_system,cpu_iowait,cpu_steal,cpu_idle);
-	printf("\n%s",output);
+
+	printf("%s\n",output);
 	fclose(t);
 
 	return;
@@ -80,32 +89,32 @@ void get_features(char *output){
 
 void connect_to_server(int *sockfd, char *server_addr, int port){
 
-    struct sockaddr_in server;
+	struct sockaddr_in server;
 
-    //Create socket
-    printf("Creating socket...");
-    fflush(stdout);
-    *sockfd = socket(AF_INET , SOCK_STREAM , 0);
-    if (*sockfd == -1)
-    {
-        printf("\nCould not create socket");
-    }
-    printf("\nSocket created");
+	//Create socket
+	printf("Creating socket...");
+	fflush(stdout);
+	*sockfd = socket(AF_INET , SOCK_STREAM , 0);
+	if (*sockfd == -1)
+	{
+		printf("\nCould not create socket");
+	}
+	printf("\nSocket created");
 
-    server.sin_addr.s_addr = inet_addr(server_addr);
-    server.sin_family = AF_INET;
-    server.sin_port = htons(port);
+	server.sin_addr.s_addr = inet_addr(server_addr);
+	server.sin_family = AF_INET;
+	server.sin_port = htons(port);
 
-    printf("\nConnecting to the server...");
-    fflush(stdout);
+	printf("\nConnecting to the server...");
+	fflush(stdout);
 
-    //Connect to remote server
-    if (connect(*sockfd, (struct sockaddr *)&server , sizeof(server)) < 0)
-    {
-        perror("\nConnect failed");
-        fflush(stdout);
-        exit(1);
-    }
+	//Connect to remote server
+	if (connect(*sockfd, (struct sockaddr *)&server , sizeof(server)) < 0)
+	{
+		perror("\nConnect failed");
+		fflush(stdout);
+		exit(1);
+	}
 	printf("\nConnected to the server");
 	fflush(stdout);
 }		
@@ -114,10 +123,14 @@ void connect_to_server(int *sockfd, char *server_addr, int port){
 int main(int argc, char **argv) {
 	int sockfd;
 	int numbytes;
+	if (argc!=3) {
+		printf("\nUsage: %s ip_server_address tcp_port_number", argv[0]);
+		exit(1);
+	}
 	connect_to_server(&sockfd, argv[1], atoi(argv[2]));
 	gettimeofday(&initial_time, NULL);
-	
-	while(true) {	
+
+	while(1) {
 		time(&now);
 		printf("\nTime: %s", ctime(&now));
 		printf("\nCollecting data features and sending to server...");
@@ -127,15 +140,15 @@ int main(int argc, char **argv) {
 		if ((numbytes = send(sockfd, send_buff, BUFSIZE, 0)) == -1) {
 			fflush(stdout);
 			perror("send");
-		   	break;
+			break;
 		}
 		printf("\n%i bytes sent",numbytes);
 		printf("\nWaiting for server commands...");
 		fflush(stdout);
 		bzero(recv_buff, BUFSIZE);
 		if ((numbytes = recv(sockfd, recv_buff, BUFSIZE, 0)) == -1) {
-		      perror("recv");
-		      break;
+			perror("recv");
+			break;
 		}
 
 
