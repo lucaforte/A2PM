@@ -1,4 +1,5 @@
-
+#set terminal postscript eps enhanced color font 'Helvetica,16'
+#set output 'gnuplot/parameters/all.eps'
 
 set terminal pngcairo dashed size 1024,768 font 'Verdana,10' linewidth 2
 set output "gnuplot/parameters/all.png"

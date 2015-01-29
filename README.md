@@ -134,8 +134,6 @@ steps are>
 					   plots the prediction model built.
   - `run_weka_svm2`: this step builds the SVM2 model using WEKA and
 					   plots the prediction model built.
-  - `run_weka_neural`: this step builds the Neural Networks model using WEKA and
-					   plots the prediction model built.
   - `evaluate_error`: this steps computes the error of all prediction models
   - `generate_report`: this final steps builds the report with all the information
 					   obtained. This requires LaTeX and to have run all the previous

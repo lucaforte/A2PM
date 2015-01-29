@@ -1,6 +1,10 @@
 set terminal pngcairo size 1024,768 enhanced font 'Verdana,10'
 set output "gnuplot/lasso/SelectedParameters.png"
 
+
+#set terminal postscript eps enhanced color font 'Helvetica,16'
+#set output 'gnuplot/lasso/SelectedParameters.eps'
+
 unset key
 
 set logscale x

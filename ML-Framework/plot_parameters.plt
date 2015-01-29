@@ -1,4 +1,5 @@
-
+#set terminal postscript eps enhanced color font 'Helvetica,10'
+#set output sprintf("gnuplot/parameters/%s.eps",the_title)
 
 set terminal pngcairo size 1024,768 font 'Verdana,10'
 set output sprintf("gnuplot/parameters/%s.png",the_title)

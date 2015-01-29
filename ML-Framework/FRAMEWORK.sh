@@ -25,7 +25,6 @@ run_weka_m5p=true
 run_weka_REPtree=true
 run_weka_svm=true
 run_weka_svm2=true
-run_weka_neural=true
 evaluate_error=true
 generate_report=true
 
@@ -282,37 +281,6 @@ if [ "$run_weka_svm2" = true ] ; then
 
 	mv data.dat data/svm2.dat
 fi
-
-
-if [ "$run_weka_neural" = true ] ; then
-	echo "***************************"
-	echo "***   NEURAL NETWORKS   ***"
-	echo "***************************"
-
-	echo "" > data.dat
-	echo "" > error/neural-error.txt
-	
-	mkdir -p gnuplot/neural
-
-	echo "Computing error for Neural Networks"
-	
-	java -classpath "$WEKA_PATH"  weka.classifiers.functions.MultilayerPerceptron -L 0.3 -M 0.2 -N 500 -V 0 -S 0 -E 20 -H a -R -t aggregated.csv -c first -d model >> error/neural-error.txt 
-	
-	echo "Generating datapoints for Neural Networks"
-
-	java -classpath "$WEKA_PATH"  weka.classifiers.functions.MultilayerPerceptron -l model -T aggregated.csv -c first -o -classifications weka.classifiers.evaluation.output.prediction.PlainText > dat.dat
-	sed -e '1,5d' dat.dat > data.dat
-	unlink dat.dat
-	
-	unlink model
-
-	echo "Generating plot for Neural Networks"
-
-	gnuplot -e "the_title='neural/neural'" plot.plt
-
-	mv data.dat data/neural.dat
-fi
-
 
 
 if [ "$evaluate_error" = true ] ; then
