@@ -2,6 +2,6 @@
 
 while true;
 do
-	unbuffer ./lient 192.168.112.129 | (./halter 8 600000 ; killall client)
-	/etc/init.d/tomcat6 restart
+	unbuffer ./client 217.111.119.142 | (./halter 8 2800000 ; killall client)
+	sudo service tomcat6 restart
 done

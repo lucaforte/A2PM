@@ -3,7 +3,7 @@
 #include <string.h>
 #include <limits.h>
 
-#define CONSECUTIVE_TIMES	4
+#define CONSECUTIVE_TIMES	5
 
 int when_to_break;
 int mem_threshold;
@@ -11,7 +11,6 @@ int mem_threshold;
 float new_datapoint;
 float last_datapoint = 0;
 int mem_used;
-int last_mem_used = 0;
 
 int consecutive_times = 0;
 
@@ -68,24 +67,13 @@ int main (int argc, char **argv) {
 					flag = 1;
 
 				if(flag) {
-					if((double)mem_used < 0.8 * (double)last_mem_used) {
-						printf("stopping for memory usage drop (mem_used: %f, last_mem_used: %f\n", (double)mem_used, (double)last_mem_used);
-						exit(EXIT_SUCCESS);
-					}
-
-				}
-
-				if(mem_used > 1900000) {
-					fflush(stdout);
 					consecutive_times_for_memory++;
 				}
 
-				if(consecutive_times_for_memory == 200) {
-					printf("Mem used > 1900000 for 200 seconds, exiting\n");
+				if(consecutive_times_for_memory == CONSECUTIVE_TIMES) {
+					printf("Too much mem_used, exiting\n");
 					exit(0);
 				}
-
-				last_mem_used = mem_used;
 			}
 		}
 	}
