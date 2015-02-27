@@ -3,11 +3,11 @@
 /* Take a service name, and a service type, and return a port number.  If the
    service name is not found, it tries it as a decimal number.  The number
    returned is byte ordered for the network. */
-short int atoport(service, proto)
+int atoport(service, proto)
 char *service;
 char *proto;
 {
-  short int port;
+  int port;
   long int lport;
   struct servent *serv;
   char *errpos;
@@ -184,7 +184,7 @@ char *netaddress;
 
   sock = socket(AF_INET, type, 0);
 
-  printf("Connecting to %s on port %d.\n",inet_ntoa(*addr),htons(port));
+  printf("Connecting to %s on port %d...\n",inet_ntoa(*addr),htons(port));
 
   if (type == SOCK_STREAM) {
     connected = connect(sock, (struct sockaddr *) &address, 
@@ -214,17 +214,19 @@ size_t count;
   int this_read;
 
   while (bytes_read < count) {
-    do
+    do {
       this_read = read(sockfd, buf, count - bytes_read);
-    while ( (this_read < 0) && (errno == EINTR) );
-    if (this_read < 0)
+    } while ( (this_read < 0) && (errno == EINTR) );
+    if (this_read < 0 && errno == EWOULDBLOCK) {
+      return bytes_read;
+    } else if (this_read < 0)
       return this_read;
     else if (this_read == 0)
       return bytes_read;
     bytes_read += this_read;
     buf += this_read;
   }
-  return count;
+  return bytes_read;
 }
 
 /* This is just like the write() system call, accept that it will

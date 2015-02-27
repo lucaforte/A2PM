@@ -15,7 +15,7 @@
 #include <netdb.h>
 #include <arpa/inet.h>
 
-short int atoport(/* char *service, char *proto */);
+int atoport(/* char *service, char *proto */);
 struct in_addr *atoaddr(/* char *address */);
 int get_connection(/* int socket_type, u_short port, int *listener */);
 int make_connection(/* char *service, int type, char *netaddress */);
