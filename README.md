@@ -1,11 +1,11 @@
-PANACEA Machine Learning / Rejuvenation Toolkit
-===============================================
+A2PM
+====
 
 
 Introduction
 ------------
 
-This package contains the PANACEA Machine Learning/Rejuvenation Toolkit,
+This package contains the A2PM, a Machine Learning/Rejuvenation Toolkit,
 which can be used to proactively predict the Remaining Time to Crash (RTTC) of
 virtualized web-based application, and use the models to proactively
 rejuvenate virtual machines when the crashing point is approaching,
