@@ -32,7 +32,11 @@ int current_vm_data_set_index;
 struct timeval communication_timeout;
 int ml_model;
 time_t now;
+int rejuvenation_counter;
+int failure_counter;
 system_features current_features;
+FILE *fp;
+
 
 
 enum vm_state {
@@ -62,13 +66,9 @@ void store_last_system_features(system_features *last_features) {
 	memcpy(last_features, &current_features, sizeof(system_features));
 }
 
-
-
-/*
- * This function look at the incoming requests
- * and if there is at least one request from every connected VM then
- * sends commands to VMs.
- */
+int machine_failed() {
+ if (current_feature.
+}
 
 void configure_load_balancer(){
 	int current_index=0;
@@ -138,8 +138,10 @@ void processing_thread(void *arg) {
 	int numbytes;
 	while (1) {
 		sleep(1);
-		time(&now);
 		printf("\nTime: %s", ctime(&now));
+                fp=fopen("output.txt", "w");
+                fprintf(fp, "Time: %s\trejuvenations: %i\tfailures: %i", ctime(&now), rejuvenation_counter, failure_counter);
+                fclose(fp);
 		current_vm_data_set_index++;
 		if (current_vm_data_set_index==NUMBER_OF_VMs) current_vm_data_set_index=0;
 		vms_status_chenged=0;
@@ -169,6 +171,13 @@ void processing_thread(void *arg) {
 				printf("\n%s", recv_buff);
 				fflush(stdout);
 				get_feature(recv_buff);
+				if (machine_failed()) {
+                                	switch_active_machine();
+                        	        configure_load_balancer();
+                	                vm_data_set[current_vm_data_set_index].last_system_features_stored = 0;
+   					failure_counter++;
+					continue;
+				}
 				if (vm_data_set[current_vm_data_set_index].last_system_features_stored) {
 					float predicted_time_to_crash = get_predicted_rttc(ml_model, vm_data_set[current_vm_data_set_index].last_features, current_features);
 					printf("\nPredicted time to crash for machine with IP address %s: %f", vm_data_set[current_vm_data_set_index].ip_address, predicted_time_to_crash);
@@ -177,6 +186,7 @@ void processing_thread(void *arg) {
 						switch_active_machine();
 						configure_load_balancer();
 						vm_data_set[current_vm_data_set_index].last_system_features_stored = 0;
+						rejuvenation_counter++;
 						continue;
 					}
 				}
@@ -341,6 +351,8 @@ int main(int argc, char **argv) {
 
 	int sockfd;
 	int port;
+	rejuvenation_counter=0;
+	failure_counter=0;
 	// set receive timeout for clients
 	communication_timeout.tv_sec = COMMUNICATION_TIMEOUT;
 	communication_timeout.tv_usec = 0;
