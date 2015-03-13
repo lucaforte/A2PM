@@ -21,7 +21,7 @@
 
 #define TTC_THRESHOLD 50
 #define COMMUNICATION_TIMEOUT 60
-#define NUMBER_OF_VMs 1
+#define NUMBER_OF_VMs 2
 
 
 #define BUFSIZE 4096
@@ -33,11 +33,16 @@ struct timeval communication_timeout;
 int ml_model;
 time_t now;
 int rejuvenation_counter;
+int consecutive_swap_failure_counter;
+int consecutive_response_time_failure_counter;
 int failure_counter;
 system_features current_features;
-FILE *fp;
+FILE *output_file;
 
 
+int swap_failure_threshold=5;
+int response_time_failure_threshold=8;
+int max_consecutive_failure_admitted=5;
 
 enum vm_state {
 	STAND_BY, ACTIVE, RENJUVUNATING,
@@ -66,8 +71,13 @@ void store_last_system_features(system_features *last_features) {
 	memcpy(last_features, &current_features, sizeof(system_features));
 }
 
-int machine_failed() {
- if (current_feature.
+int machine_failed(system_features last_features, system_features current_features) {
+
+	if (current_features.time-last_features.time>response_time_failure_threshold || current_features.swap_used>swap_failure_threshold) {
+		printf("\nFalse negative detected. Swap: %d interarrival time: %d",current_features.swap_used,current_features.time-last_features.time);
+		return 1;
+	}
+	return 0;
 }
 
 void configure_load_balancer(){
@@ -122,8 +132,6 @@ void switch_active_machine() {
 	printf("\nREJUVENATE command sent to machine with IP address %s",
 			vm_data_set[current_vm_data_set_index].ip_address);
 	fflush(stdout);
-
-
 }
 
 void processing_thread(void *arg) {
@@ -139,9 +147,9 @@ void processing_thread(void *arg) {
 	while (1) {
 		sleep(1);
 		printf("\nTime: %s", ctime(&now));
-                fp=fopen("output.txt", "w");
-                fprintf(fp, "Time: %s\trejuvenations: %i\tfailures: %i", ctime(&now), rejuvenation_counter, failure_counter);
-                fclose(fp);
+                output_file=fopen("output.txt", "w");
+                fprintf(output_file, "Rejuvenations: %i\tFailures: %i\tTime: %s", rejuvenation_counter, failure_counter, ctime(&now));
+                fclose(output_file);
 		current_vm_data_set_index++;
 		if (current_vm_data_set_index==NUMBER_OF_VMs) current_vm_data_set_index=0;
 		vms_status_chenged=0;
@@ -171,18 +179,22 @@ void processing_thread(void *arg) {
 				printf("\n%s", recv_buff);
 				fflush(stdout);
 				get_feature(recv_buff);
-				if (machine_failed()) {
-                                	switch_active_machine();
-                        	        configure_load_balancer();
-                	                vm_data_set[current_vm_data_set_index].last_system_features_stored = 0;
-   					failure_counter++;
-					continue;
-				}
 				if (vm_data_set[current_vm_data_set_index].last_system_features_stored) {
+					//checking false negative
+					if (machine_failed(vm_data_set[current_vm_data_set_index].last_features, current_features)) {
+						fflush(stdout);
+	                    switch_active_machine();
+	                    configure_load_balancer();
+	                	vm_data_set[current_vm_data_set_index].last_system_features_stored = 0;
+	   					failure_counter++;
+						continue;
+					}
+					//does the machine need to be rejuveneted?
 					float predicted_time_to_crash = get_predicted_rttc(ml_model, vm_data_set[current_vm_data_set_index].last_features, current_features);
 					printf("\nPredicted time to crash for machine with IP address %s: %f", vm_data_set[current_vm_data_set_index].ip_address, predicted_time_to_crash);
 					fflush(stdout);
 					if (predicted_time_to_crash<(float)TTC_THRESHOLD) {
+						//yes, the machine need to be rejuveneted
 						switch_active_machine();
 						configure_load_balancer();
 						vm_data_set[current_vm_data_set_index].last_system_features_stored = 0;
@@ -353,13 +365,15 @@ int main(int argc, char **argv) {
 	int port;
 	rejuvenation_counter=0;
 	failure_counter=0;
+	consecutive_swap_failure_counter=0;
+	consecutive_response_time_failure_counter=0;
 	// set receive timeout for clients
 	communication_timeout.tv_sec = COMMUNICATION_TIMEOUT;
 	communication_timeout.tv_usec = 0;
 	memset(vm_data_set, 0, sizeof(struct vm_data) * NUMBER_OF_VMs);
 
 	if (argc!=3) {
-		printf("\nUsage: %s executable_name tcp_port_number ml_model_number\n");
+		printf("\nUsage: executable_file_name tcp_port_number ml_model_number\n");
 		exit(1);
 	}
 
