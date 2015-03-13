@@ -23,9 +23,13 @@
 #define COMMUNICATION_TIMEOUT 60
 #define NUMBER_OF_VMs 2
 
-
 #define BUFSIZE 4096
 #define IN_CONN_BACKLOG_LEN 1024
+
+#define SWAP_FAILURE_THRESHOLD 450000;
+#define RESP_TIME_FAILURE_THRESHOLD 5;
+#define MAX_CONSEC_FAILURE_ADMITTED 5;
+
 char send_buff[BUFSIZE];
 char recv_buff[BUFSIZE];
 int current_vm_data_set_index;
@@ -40,9 +44,9 @@ system_features current_features;
 FILE *output_file;
 
 
-int swap_failure_threshold=5;
-int response_time_failure_threshold=8;
-int max_consecutive_failure_admitted=5;
+int swap_failure_threshold=SWAP_FAILURE_THRESHOLD;
+int response_time_failure_threshold=RESP_TIME_FAILURE_THRESHOLD;
+int max_consecutive_failure_admitted=MAX_CONSEC_FAILURE_ADMITTED;
 
 enum vm_state {
 	STAND_BY, ACTIVE, RENJUVUNATING,
