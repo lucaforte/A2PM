@@ -26,9 +26,9 @@
 #define BUFSIZE 4096
 #define IN_CONN_BACKLOG_LEN 1024
 
-#define SWAP_FAILURE_THRESHOLD 450000;
-#define RESP_TIME_FAILURE_THRESHOLD 5;
-#define MAX_CONSEC_FAILURE_ADMITTED 5;
+#define SWAP_FAILURE_THRESHOLD 450000
+#define RESP_TIME_FAILURE_THRESHOLD 8
+#define MAX_CONSEC_FAILURE_ADMITTED 5
 
 char send_buff[BUFSIZE];
 char recv_buff[BUFSIZE];
@@ -39,14 +39,11 @@ time_t now;
 int rejuvenation_counter;
 int consecutive_swap_failure_counter;
 int consecutive_response_time_failure_counter;
-int failure_counter;
+int response_time_failure_counter;
+int swap_failure_counter;
 system_features current_features;
 FILE *output_file;
 
-
-int swap_failure_threshold=SWAP_FAILURE_THRESHOLD;
-int response_time_failure_threshold=RESP_TIME_FAILURE_THRESHOLD;
-int max_consecutive_failure_admitted=MAX_CONSEC_FAILURE_ADMITTED;
 
 enum vm_state {
 	STAND_BY, ACTIVE, RENJUVUNATING,
@@ -76,9 +73,31 @@ void store_last_system_features(system_features *last_features) {
 }
 
 int machine_failed(system_features last_features, system_features current_features) {
+	// swap
+	if (current_features.swap_used>(float)SWAP_FAILURE_THRESHOLD) {
+		printf("\nFalse negative suspected: swap: %d (threshold: %d)",current_features.swap_used, SWAP_FAILURE_THRESHOLD, current_features.time-last_features.time, RESP_TIME_FAILURE_THRESHOLD);
+		consecutive_swap_failure_counter++;
+	} else {
+			consecutive_swap_failure_counter=0;
+	}
+	if (consecutive_swap_failure_counter > MAX_CONSEC_FAILURE_ADMITTED) {
+		printf("\nFalse negative detected: swap: %d (threshold: %d)",current_features.swap_used, SWAP_FAILURE_THRESHOLD, current_features.time-last_features.time, RESP_TIME_FAILURE_THRESHOLD);
+		consecutive_swap_failure_counter=0;
+		swap_failure_counter++;
+		return 1;
+	}
 
-	if (current_features.time-last_features.time>response_time_failure_threshold || current_features.swap_used>swap_failure_threshold) {
-		printf("\nFalse negative detected. Swap: %d interarrival time: %d",current_features.swap_used,current_features.time-last_features.time);
+	//response_time
+	if (current_features.time-last_features.time>RESP_TIME_FAILURE_THRESHOLD) {
+		printf("\nFalse negative suspected: interarrival time: %f (threshold: %d)", current_features.time-last_features.time, RESP_TIME_FAILURE_THRESHOLD);
+		consecutive_response_time_failure_counter++;
+	} else {
+		consecutive_response_time_failure_counter=0;
+	}
+	if (consecutive_response_time_failure_counter > MAX_CONSEC_FAILURE_ADMITTED) {
+		printf("\nFalse negative detected: interarrival time: %f (threshold: %d)", current_features.time-last_features.time, RESP_TIME_FAILURE_THRESHOLD);
+		consecutive_response_time_failure_counter=0;
+		response_time_failure_counter++;
 		return 1;
 	}
 	return 0;
@@ -90,7 +109,7 @@ void configure_load_balancer(){
 	bzero(startcommand, 1024);
 	printf("\nReconfiguring load balancer...");
 	strcat(startcommand, "killall xr; ");
-	strcat(startcommand, "/usr/sbin/xr --verbose --server tcp:0:8080 " );
+	strcat(startcommand, "/usr/bin/xr --verbose --server tcp:0:8080 " );
 	printf("\nCurrent states");
 	printf("\nIP address\tstatus");
 	while (current_index<NUMBER_OF_VMs) {
@@ -150,9 +169,10 @@ void processing_thread(void *arg) {
 	int numbytes;
 	while (1) {
 		sleep(1);
+		time(&now);
 		printf("\nTime: %s", ctime(&now));
                 output_file=fopen("output.txt", "w");
-                fprintf(output_file, "Rejuvenations: %i\tFailures: %i\tTime: %s", rejuvenation_counter, failure_counter, ctime(&now));
+                fprintf(output_file, "Rejuvenations: %i\tResponse time failures: %i\tSwap failures: %i\tTime: %s", rejuvenation_counter, response_time_failure_counter, swap_failure_counter, ctime(&now));
                 fclose(output_file);
 		current_vm_data_set_index++;
 		if (current_vm_data_set_index==NUMBER_OF_VMs) current_vm_data_set_index=0;
@@ -190,7 +210,6 @@ void processing_thread(void *arg) {
 	                    switch_active_machine();
 	                    configure_load_balancer();
 	                	vm_data_set[current_vm_data_set_index].last_system_features_stored = 0;
-	   					failure_counter++;
 						continue;
 					}
 					//does the machine need to be rejuveneted?
@@ -368,7 +387,8 @@ int main(int argc, char **argv) {
 	int sockfd;
 	int port;
 	rejuvenation_counter=0;
-	failure_counter=0;
+	swap_failure_counter=0;
+	response_time_failure_counter=0;
 	consecutive_swap_failure_counter=0;
 	consecutive_response_time_failure_counter=0;
 	// set receive timeout for clients
