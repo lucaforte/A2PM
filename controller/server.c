@@ -88,14 +88,13 @@ int machine_failed(system_features last_features, system_features current_featur
         }
 
         //response_time
-        if (resp_time>RESP_TIME_FAILURE_THRESHOLD) {
-                printf("\nFalse negative suspected: interarrival time: %f (threshold: %d)", current_features.time-last_features.time, RESP_TIME_FAILURE_THRESHOLD);
+        if (resp_time>(float)RESP_TIME_FAILURE_THRESHOLD) {
+                printf("\nFalse negative suspected: interarrival time: %d (threshold: %d)", resp_time, RESP_TIME_FAILURE_THRESHOLD);
                 consecutive_response_time_failure_counter++;
         } else {
                 consecutive_response_time_failure_counter=0;
         }
         if (consecutive_response_time_failure_counter > MAX_CONSEC_FAILURE_ADMITTED) {
-                printf("\nFalse negative detected: interarrival time: %f (threshold: %d)", current_features.time-last_features.time, RESP_TIME_FAILURE_THRESHOLD);
                 consecutive_response_time_failure_counter=0;
                 response_time_failure_counter++;
                 return 1;
@@ -169,7 +168,7 @@ void processing_thread(void *arg) {
 
 	int numbytes;
 	while (1) {
-		sleep(1);
+		sleep(4);
 		time(&now);
 		printf("\nTime: %s", ctime(&now));
                 output_file=fopen("output.txt", "w");
@@ -207,7 +206,7 @@ void processing_thread(void *arg) {
 			//end timer for calculating the response time
 			struct timeval end_time;
 			gettimeofday(&end_time,NULL);
-			long resp_time = (end_time.tv_sec-start_time.tv_sec)*1000000 + end_time.tv_usec-start_time.tv_usec;
+			int resp_time = (end_time.tv_sec-start_time.tv_sec);			
 			printf("\nResponse received. Response time (seconds): %i", resp_time);
 			fflush(stdout);
 			if (numbytes == -1) {
