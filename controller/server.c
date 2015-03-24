@@ -72,7 +72,7 @@ void store_last_system_features(system_features *last_features) {
 	memcpy(last_features, &current_features, sizeof(system_features));
 }
 
-int machine_failed(system_features last_features, system_features current_features) {
+int machine_failed(system_features last_features, system_features current_features, int resp_time) {
         // swap
         if (current_features.swap_used>(float)SWAP_FAILURE_THRESHOLD) {
                 printf("\nFalse negative suspected: swap: %d (threshold: %d)",current_features.swap_used, SWAP_FAILURE_THRESHOLD, current_features.time-last_features.time, RESP_TIME_FAILURE_THRESHOLD);
@@ -88,7 +88,7 @@ int machine_failed(system_features last_features, system_features current_featur
         }
 
         //response_time
-        if (current_features.time-last_features.time>RESP_TIME_FAILURE_THRESHOLD) {
+        if (resp_time>RESP_TIME_FAILURE_THRESHOLD) {
                 printf("\nFalse negative suspected: interarrival time: %f (threshold: %d)", current_features.time-last_features.time, RESP_TIME_FAILURE_THRESHOLD);
                 consecutive_response_time_failure_counter++;
         } else {
@@ -194,12 +194,23 @@ void processing_thread(void *arg) {
 				}
 				continue;
 			}
+
 			printf("\nWaiting feature data from machine with IP address %s index %i", vm_data_set[current_vm_data_set_index].ip_address, current_vm_data_set_index);
 			fflush(stdout);
 			//getchar();
 			// receiving data from client
 			bzero(recv_buff, BUFSIZE);
-			if ((numbytes = recv(vm_data_set[current_vm_data_set_index].socket, recv_buff, BUFSIZE, 0)) == -1) {
+			//starting timer for calculating the response time
+			struct timeval start_time;
+			gettimeofday(&start_time,NULL);
+			numbytes = recv(vm_data_set[current_vm_data_set_index].socket, recv_buff, BUFSIZE, 0);
+			//end timer for calculating the response time
+			struct timeval end_time;
+			gettimeofday(&end_time,NULL);
+			long resp_time = (end_time.tv_sec-start_time.tv_sec)*1000000 + end_time.tv_usec-start_time.tv_usec;
+			printf("\nResponse received. Response time (seconds): %i", resp_time);
+			fflush(stdout);
+			if (numbytes == -1) {
 				printf("\nFailed receiving data from machine with IP address %s", vm_data_set[current_vm_data_set_index].ip_address);
 				fflush(stdout);
 			} else  if (numbytes == 0) {
@@ -221,7 +232,7 @@ void processing_thread(void *arg) {
 				get_feature(recv_buff);
 				if (vm_data_set[current_vm_data_set_index].last_system_features_stored) {
 					//checking false negative
-					if (machine_failed(vm_data_set[current_vm_data_set_index].last_features, current_features)) {
+					if (machine_failed(vm_data_set[current_vm_data_set_index].last_features, current_features, resp_time)) {
 						fflush(stdout);
 	                    switch_active_machine();
 	                    configure_load_balancer();
