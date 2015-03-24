@@ -1,50 +1,23 @@
 #include "ml_models.h"
 
 
-float calculate_lasso(system_features_with_slopes f) {
-	return
-			13.1487 *  f.gen_time +
-			-22.0097 *  f.n_th_slope +
-			-0.002  *  f.mem_used_slope +
-			0.002  *  f.mem_free_slope +
-			0.002  *  f.swap_used_slope +
-			-0.002  *  f.swap_free_slope +
-			-1.5356 *  f.cpu_user_slope +
-			-9.2307 *  f.cpu_system_slope +
-			-5.5353 *  f.cpu_idle_slope +
-			-0.4934 *  f.n_th +
-			-0.0004 *  f.mem_used +
-			0.019  *  f.mem_buffers +
-			-0.0006 *  f.swap_used +
-			-6.3364 *  f.cpu_user +
-			-16.4923 *  f.cpu_nice +
-			-19.4085 *  f.cpu_system +
-			-4.7375 *  f.cpu_iowait +
-			-10.4713 *  f.cpu_idle +
-			1856.7264;
-}
-
 float calculate_linear_regression(system_features_with_slopes f) {
 	return
-			13.1487 *  f.gen_time +
-			-22.0097 *  f.n_th_slope +
-			-0.002  *  f.mem_used_slope +
-			0.002  *  f.mem_free_slope +
-			0.002  *  f.swap_used_slope +
-			-0.002  *  f.swap_free_slope +
-			-1.5356 *  f.cpu_user_slope +
-			-9.2307 *  f.cpu_system_slope +
-			-5.5353 *  f.cpu_idle_slope +
-			-0.4934 *  f.n_th +
-			-0.0004 *  f.mem_used +
-			0.019  *  f.mem_buffers +
-			-0.0006 *  f.swap_used +
-			-6.3364 *  f.cpu_user +
-			-16.4923 *  f.cpu_nice +
-			-19.4085 *  f.cpu_system +
-			-4.7375 *  f.cpu_iowait +
-			-10.4713 *  f.cpu_idle +
-			1856.7264;
+      0.5929 *  f.gen_time +
+     -0.2645 *  f.n_th_slope +
+     -0.0002 *  f.mem_used_slope +
+      0.0002 *  f.mem_free_slope +
+      0.4242 *  f.cpu_user_slope +
+     -0.9884 *  f.cpu_idle_slope +
+     -0.459  *  f.n_th +
+      0.0002 *  f.mem_free +
+     -0.0013 *  f.mem_buffers +
+      0.0001 *  f.mem_cached +
+     -0.0004 *  f.swap_used +
+      1.1191 *  f.cpu_user +
+      0.9517 *  f.cpu_system +
+      0.8971 *  f.cpu_idle +
+    242.8923;
 }
 
 float get_predicted_rttc(int ml_model, system_features last_features, system_features current_features) {
@@ -69,7 +42,7 @@ float get_predicted_rttc(int ml_model, system_features last_features, system_fea
 	f.cpu_iowait=last_features.cpu_iowait;
     f.cpu_idle=last_features.cpu_idle;
 
-    return calculate_lasso(f);
+    return calculate_linear_regression(f);
 
 /*
 	switch (ml_model) {
