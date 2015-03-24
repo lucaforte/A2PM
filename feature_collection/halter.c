@@ -3,7 +3,7 @@
 #include <string.h>
 #include <limits.h>
 
-#define CONSECUTIVE_TIMES	4
+#define CONSECUTIVE_TIMES	5
 
 int when_to_break;
 int swap_threshold;
@@ -11,6 +11,7 @@ int swap_threshold;
 float new_datapoint;
 float last_datapoint = 0;
 int swap_used;
+int mem_used;
 
 int consecutive_times = 0;
 

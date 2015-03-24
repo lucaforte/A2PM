@@ -1,0 +1,10 @@
+*.gen.tex
+*.exe
+controller_client
+controller_server
+client
+server
+halter
+leaks
+threads
+*.txt
