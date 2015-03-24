@@ -168,10 +168,10 @@ void processing_thread(void *arg) {
 
 	int numbytes;
 	while (1) {
-		sleep(1);
+		sleep(4);
 		time(&now);
 		printf("\nTime: %s", ctime(&now));
-                output_file=fopen("output.txt", "w");
+                output_file=fopen("output.txt", "a");
                 fprintf(output_file, "Rejuvenations: %i\tResponse time failures: %i\tSwap failures: %i\tTime: %s", rejuvenation_counter, response_time_failure_counter, swap_failure_counter, ctime(&now));
                 fclose(output_file);
 		current_vm_data_set_index++;
