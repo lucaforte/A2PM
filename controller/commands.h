@@ -1,4 +1,5 @@
 enum massage{
+	WAITING_DATA,
 	CONTINUE,
 	REJUVENATE,
 	READY,

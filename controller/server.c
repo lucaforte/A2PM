@@ -21,18 +21,28 @@
 
 #define TTC_THRESHOLD 50
 #define COMMUNICATION_TIMEOUT 60
-#define NUMBER_OF_VMs 1
-
+#define NUMBER_OF_VMs 2
 
 #define BUFSIZE 4096
 #define IN_CONN_BACKLOG_LEN 1024
+
+#define SWAP_FAILURE_THRESHOLD 450000
+#define RESP_TIME_FAILURE_THRESHOLD 8
+#define MAX_CONSEC_FAILURE_ADMITTED 5
+
 char send_buff[BUFSIZE];
 char recv_buff[BUFSIZE];
 int current_vm_data_set_index;
 struct timeval communication_timeout;
 int ml_model;
 time_t now;
+int rejuvenation_counter;
+int consecutive_swap_failure_counter;
+int consecutive_response_time_failure_counter;
+int response_time_failure_counter;
+int swap_failure_counter;
 system_features current_features;
+FILE *output_file;
 
 
 enum vm_state {
@@ -62,13 +72,37 @@ void store_last_system_features(system_features *last_features) {
 	memcpy(last_features, &current_features, sizeof(system_features));
 }
 
+int machine_failed(system_features last_features, system_features current_features) {
+        // swap
+        if (current_features.swap_used>(float)SWAP_FAILURE_THRESHOLD) {
+                printf("\nFalse negative suspected: swap: %d (threshold: %d)",current_features.swap_used, SWAP_FAILURE_THRESHOLD, current_features.time-last_features.time, RESP_TIME_FAILURE_THRESHOLD);
+                consecutive_swap_failure_counter++;
+        } else {
+                        consecutive_swap_failure_counter=0;
+        }
+        if (consecutive_swap_failure_counter > MAX_CONSEC_FAILURE_ADMITTED) {
+                printf("\nFalse negative detected: swap: %d (threshold: %d)",current_features.swap_used, SWAP_FAILURE_THRESHOLD, current_features.time-last_features.time, RESP_TIME_FAILURE_THRESHOLD);
+                consecutive_swap_failure_counter=0;
+                swap_failure_counter++;
+                return 1;
+        }
 
+        //response_time
+        if (current_features.time-last_features.time>RESP_TIME_FAILURE_THRESHOLD) {
+                printf("\nFalse negative suspected: interarrival time: %f (threshold: %d)", current_features.time-last_features.time, RESP_TIME_FAILURE_THRESHOLD);
+                consecutive_response_time_failure_counter++;
+        } else {
+                consecutive_response_time_failure_counter=0;
+        }
+        if (consecutive_response_time_failure_counter > MAX_CONSEC_FAILURE_ADMITTED) {
+                printf("\nFalse negative detected: interarrival time: %f (threshold: %d)", current_features.time-last_features.time, RESP_TIME_FAILURE_THRESHOLD);
+                consecutive_response_time_failure_counter=0;
+                response_time_failure_counter++;
+                return 1;
+        }
+        return 0;
+}
 
-/*
- * This function look at the incoming requests
- * and if there is at least one request from every connected VM then
- * sends commands to VMs.
- */
 
 void configure_load_balancer(){
 	int current_index=0;
@@ -122,8 +156,6 @@ void switch_active_machine() {
 	printf("\nREJUVENATE command sent to machine with IP address %s",
 			vm_data_set[current_vm_data_set_index].ip_address);
 	fflush(stdout);
-
-
 }
 
 void processing_thread(void *arg) {
@@ -140,10 +172,28 @@ void processing_thread(void *arg) {
 		sleep(1);
 		time(&now);
 		printf("\nTime: %s", ctime(&now));
+                output_file=fopen("output.txt", "w");
+                fprintf(output_file, "Rejuvenations: %i\tResponse time failures: %i\tSwap failures: %i\tTime: %s", rejuvenation_counter, response_time_failure_counter, swap_failure_counter, ctime(&now));
+                fclose(output_file);
 		current_vm_data_set_index++;
 		if (current_vm_data_set_index==NUMBER_OF_VMs) current_vm_data_set_index=0;
 		vms_status_chenged=0;
 		if (vm_data_set[current_vm_data_set_index].state==ACTIVE) {
+			//sending WAITING_DATA command to the vm
+			printf("\nSending WAITING_DATA command to machine with IP address %s index %i", vm_data_set[current_vm_data_set_index].ip_address, current_vm_data_set_index);
+			fflush(stdout);
+			bzero(send_buff, BUFSIZE);
+			send_buff[0] = WAITING_DATA;
+			if ((send(vm_data_set[current_vm_data_set_index].socket, send_buff, BUFSIZE,0)) == -1) {
+				if (errno == EWOULDBLOCK) {
+					printf("\nTimeout on send() while sending data to machine with IP address %s", vm_data_set[current_vm_data_set_index].ip_address);
+					fflush(stdout);
+				} else {
+					printf("\nError on send() while sending data to machine with IP address on recv while waiting data from machine with IP address %s", vm_data_set[current_vm_data_set_index].ip_address);
+					fflush(stdout);
+				}
+				continue;
+			}
 			printf("\nWaiting feature data from machine with IP address %s index %i", vm_data_set[current_vm_data_set_index].ip_address, current_vm_data_set_index);
 			fflush(stdout);
 			//getchar();
@@ -170,13 +220,24 @@ void processing_thread(void *arg) {
 				fflush(stdout);
 				get_feature(recv_buff);
 				if (vm_data_set[current_vm_data_set_index].last_system_features_stored) {
+					//checking false negative
+					if (machine_failed(vm_data_set[current_vm_data_set_index].last_features, current_features)) {
+						fflush(stdout);
+	                    switch_active_machine();
+	                    configure_load_balancer();
+	                	vm_data_set[current_vm_data_set_index].last_system_features_stored = 0;
+						continue;
+					}
+					//does the machine need to be rejuveneted?
 					float predicted_time_to_crash = get_predicted_rttc(ml_model, vm_data_set[current_vm_data_set_index].last_features, current_features);
 					printf("\nPredicted time to crash for machine with IP address %s: %f", vm_data_set[current_vm_data_set_index].ip_address, predicted_time_to_crash);
 					fflush(stdout);
 					if (predicted_time_to_crash<(float)TTC_THRESHOLD) {
+						//yes, the machine need to be rejuveneted
 						switch_active_machine();
 						configure_load_balancer();
 						vm_data_set[current_vm_data_set_index].last_system_features_stored = 0;
+						rejuvenation_counter++;
 						continue;
 					}
 				}
@@ -341,13 +402,18 @@ int main(int argc, char **argv) {
 
 	int sockfd;
 	int port;
+	rejuvenation_counter=0;
+	swap_failure_counter=0;
+	response_time_failure_counter=0;
+	consecutive_swap_failure_counter=0;
+	consecutive_response_time_failure_counter=0;
 	// set receive timeout for clients
 	communication_timeout.tv_sec = COMMUNICATION_TIMEOUT;
 	communication_timeout.tv_usec = 0;
 	memset(vm_data_set, 0, sizeof(struct vm_data) * NUMBER_OF_VMs);
 
 	if (argc!=3) {
-		printf("\nUsage: %s executable_name tcp_port_number ml_model_number\n");
+		printf("\nUsage: executable_file_name tcp_port_number ml_model_number\n");
 		exit(1);
 	}
 

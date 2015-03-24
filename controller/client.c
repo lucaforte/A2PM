@@ -120,29 +120,21 @@ void connect_to_server(int *sockfd, char *server_addr, int port){
 }		
 
 
+
+
 int main(int argc, char **argv) {
 	int sockfd;
 	int numbytes;
-	if (argc!=3) {
+	if (argc != 3) {
 		printf("\nUsage: %s ip_server_address tcp_port_number", argv[0]);
 		exit(1);
 	}
 	connect_to_server(&sockfd, argv[1], atoi(argv[2]));
 	gettimeofday(&initial_time, NULL);
 
-	while(1) {
+	while (1) {
 		time(&now);
 		printf("\nTime: %s", ctime(&now));
-		printf("\nCollecting data features and sending to server...");
-		fflush(stdout);
-		bzero(send_buff, BUFSIZE);
-		get_features(send_buff);
-		if ((numbytes = send(sockfd, send_buff, BUFSIZE, 0)) == -1) {
-			fflush(stdout);
-			perror("send");
-			break;
-		}
-		printf("\n%i bytes sent",numbytes);
 		printf("\nWaiting for server commands...");
 		fflush(stdout);
 		bzero(recv_buff, BUFSIZE);
@@ -151,11 +143,28 @@ int main(int argc, char **argv) {
 			break;
 		}
 
+		if (recv_buff[0] == WAITING_DATA) {
+			//wait for completing pending requests
+			printf(
+					"\nCommand WAITING_DATA received. Collecting data features and sending to server...");
+			fflush(stdout);
+			bzero(send_buff, BUFSIZE);
+			get_features(send_buff);
+			if ((numbytes = send(sockfd, send_buff, BUFSIZE, 0)) == -1) {
+				fflush(stdout);
+				perror("send");
+				break;
+			}
 
-		if (recv_buff[0]==REJUVENATE) {
+			printf("\n%i bytes sent", numbytes);
+			fflush(stdout);
+			continue;
+		}
+
+		if (recv_buff[0] == REJUVENATE) {
 			//wait for completing pending requests
 			printf("\nCommand REJUVENETE received");
-			printf("\nWaiting %i seconds for completing pending requests before rejuvenation...", TIME_FOR_COMPLETING_PENDING_REQUESTS);
+			printf(	"\nWaiting %i seconds for completing pending requests before rejuvenation...", TIME_FOR_COMPLETING_PENDING_REQUESTS);
 			fflush(stdout);
 			sleep(TIME_FOR_COMPLETING_PENDING_REQUESTS);
 			printf("\nExecuting reboot...\n");
@@ -163,8 +172,6 @@ int main(int argc, char **argv) {
 			system("reboot");
 			exit(0);
 		}
-
-
 		sleep(1);
 	}
 	close(sockfd);
