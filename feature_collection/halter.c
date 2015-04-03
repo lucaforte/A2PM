@@ -12,6 +12,7 @@ float new_datapoint;
 float last_datapoint = 0;
 int swap_used;
 int mem_used;
+int swap_used;
 
 int consecutive_times = 0;
 
