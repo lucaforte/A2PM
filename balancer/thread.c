@@ -67,10 +67,11 @@ static void *__helper_create_thread(void *arg) {
 * @param arg A pointer to an array of arguments to be passed to the new threads' entry point
 *
 */
-void create_threads(unsigned short int n, void *(*start_routine)(void*), void *arg) {
+int create_threads(unsigned short int n, void *(*start_routine)(void*), void *arg) {
+//void create_threads(unsigned short int n, void *(*start_routine)(void*), void *arg) {
 
 	int i;
-
+	int num;
 	// We create our thread within our helper function, which accepts just
 	// one parameter. We thus have to create one single parameter containing
 	// the original pointer and the function to be used as real entry point.
@@ -81,7 +82,9 @@ void create_threads(unsigned short int n, void *(*start_routine)(void*), void *a
 
 	// n threads are created simply looping...
 	for(i = 0; i < n; i++) {
-		new_thread(__helper_create_thread, (void *)new_arg);
+		num = new_thread(__helper_create_thread, (void *)new_arg);
 	}
+	
+	return num;
 }
 
