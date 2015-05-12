@@ -16,15 +16,15 @@
 * @param newVal the new value to place in ptr if ptr contains oldVal
 *
 * @ret true if the CAS succeeded, false otherwise
-*/
+*//*
 inline bool CAS_x86(volatile unsigned long long *ptr, unsigned long long oldVal, unsigned long long newVal) {
 	unsigned long res = 0;
 
 	__asm__ __volatile__(
-		LOCK "cmpxchgq %1, %2;"//ZF = 1 if succeeded
-		"lahf;"  // to get the correct result even if oldVal == 0
-		"bt $14, %%ax;" // is ZF set? (ZF is the 6'th bit in %ah, so it's the 14'th in ax)
-		"adc %0, %0" // get the result
+		LOCK "cmpxchgq %1, %2;"
+		"lahf;" 
+		"bt $14, %%ax;"
+		"adc %0, %0"
 		: "=r"(res)
 		: "r"(newVal), "m"(*ptr), "a"(oldVal), "0"(res)
 		: "memory"
@@ -32,7 +32,7 @@ inline bool CAS_x86(volatile unsigned long long *ptr, unsigned long long oldVal,
 
 	return (bool)res;
 }
-
+*/
 
 /**
 * This function implements a compare-and-swap atomic operation on x86-64 for integers
@@ -47,7 +47,7 @@ inline bool CAS_x86(volatile unsigned long long *ptr, unsigned long long oldVal,
 */
 inline bool iCAS_x86(volatile unsigned int *ptr, unsigned int oldVal, unsigned int newVal) {
 	unsigned long res = 0;
-
+	
 	__asm__ __volatile__(
 		LOCK "cmpxchgl %1, %2;" //ZF = 1 if succeeded
 		"lahf;"  // to get the correct result even if oldVal == 0

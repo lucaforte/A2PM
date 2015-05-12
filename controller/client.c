@@ -19,8 +19,8 @@
 #define TIME_FOR_COMPLETING_PENDING_REQUESTS	50
 
 // services provided
-enum services {
-    SERVICE_0, SERVICE_1, SERVICE_2
+enum services{
+	SERVICE_0, SERVICE_1, SERVICE_2
 };
 
 // STAND_BY has value 0, ACTIVE has value 1, REJUVENATING has value 2, and so on...
@@ -128,7 +128,8 @@ void get_features(char * output){
     
     sprintf(output,"%sCPU: %f %f %f %f %f %f", output, cpu_user, cpu_nice, cpu_system, cpu_iowait, cpu_steal, cpu_idle);
     
-    printf("%s\n",output);
+    /*** COMMENTO ***/
+    //printf("%s\n",output);
     
     return;
 
@@ -186,17 +187,48 @@ void connect_to_server(int * sockfd, char * server_addr, int port){
 	}
 }
 
+void start_server(int * sockfd, int port){
+    int sock;
+    struct sockaddr_in temp;
+    
+    //Create socket
+    if((sock = socket(AF_INET,SOCK_STREAM,0)) == -1){
+        perror("start_server - socket");
+        exit(1);
+    }
+    //Server address
+    temp.sin_family = AF_INET;
+    temp.sin_addr.s_addr = htonl(INADDR_ANY);
+    temp.sin_port = htons(port);
+    //Bind
+    if (bind(sock, (struct sockaddr*) &temp, sizeof(temp))) {
+        perror("start_server - bind");
+        exit(1);
+    }
+    //Listen for max CONN_BACKLOG
+    if (listen(sock, 1024)) {
+        perror("start_server - listen");
+        exit(1);
+    }
+    *sockfd = sock;
+    printf("Server started\n");
+    
+}
+
 int main(int argc,char ** argv){
     int sockfd;
     int numbytes;
     int group;
     int status;
-    
+    pthread_attr_t pthread_custom_attr;
+    pthread_t tid;
+   
     if (argc != 5) {
-        printf("Usage: %s server_ip_address tcp_port_number service status\n", argv[0]);
+		// server stays for controller server side
+        printf("Usage: %s server_ip_address server_tcp_port_number service status\n", argv[0]);
         exit(1);
-    }
-    
+    } 
+       
     // store info about the service provided
     s.service = atoi(argv[3]);
     if(!strcmp(argv[4],"STAND_BY"))
@@ -220,6 +252,7 @@ int main(int argc,char ** argv){
 		
     }
     connect_to_server(&sockfd, argv[1], atoi(argv[2]));
+
     gettimeofday(&initial_time, NULL);
     
     //get number of available CPUs

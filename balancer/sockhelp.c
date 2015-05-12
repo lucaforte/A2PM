@@ -1,5 +1,6 @@
 #include "sockhelp.h"
 
+#define	NOT_AVAILABLE -71
 /* Take a service name, and a service type, and return a port number.  If the
    service name is not found, it tries it as a decimal number.  The number
    returned is byte ordered for the network. */
@@ -18,6 +19,8 @@ char *proto;
     port = serv->s_port;
   else { /* Not in services, maybe a number? */
     lport = strtol(service, &errpos, 0);
+    //errpos points to the first next character (es: "100 ciao", it points to " ciao")
+    //errpos[0] must be equal to zero to have a correct lport value
     if ( (errpos[0] != 0) || (lport < 1) || (lport > 65535) )
       return -1; /* Invalid port address */
     port = htons(lport);
@@ -162,9 +165,11 @@ char *netaddress;
   struct in_addr *addr;
   int sock, connected;
   struct sockaddr_in address;
-
-  if (type == SOCK_STREAM) 
+  if (type == SOCK_STREAM){
     port = atoport(service, "tcp");
+    printf("PORT: %d\n", port);
+}
+
   if (type == SOCK_DGRAM)
     port = atoport(service, "udp");
   if (port == -1) {
@@ -176,7 +181,7 @@ char *netaddress;
     fprintf(stderr,"make_connection:  Invalid network address.\n");
     return -1;
   }
- 
+
   memset((char *) &address, 0, sizeof(address));
   address.sin_family = AF_INET;
   address.sin_port = (port);
@@ -213,19 +218,19 @@ size_t count;
   size_t bytes_read = 0;
   int this_read;
 
-  while (bytes_read < count) {
     do {
       this_read = read(sockfd, buf, count - bytes_read);
     } while ( (this_read < 0) && (errno == EINTR) );
     if (this_read < 0 && errno == EWOULDBLOCK) {
-      return bytes_read;
-    } else if (this_read < 0)
+      return (int)NOT_AVAILABLE;
+    } else if (this_read < 0){
       return this_read;
-    else if (this_read == 0)
+  }
+    else if (this_read == 0){
       return bytes_read;
+  }
     bytes_read += this_read;
     buf += this_read;
-  }
   return bytes_read;
 }
 
