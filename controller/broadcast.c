@@ -46,11 +46,11 @@ static void do_bcast(void) {
 	// loop su tutte le socket in controllers_sockets
 }
 
-static void call_funcion(msg_struct msg){
+static void call_funcion(int sock, msg_struct msg){
 	int index;
 	for(index = 0; index < MAX_CALLBACKS; index++){
 		if(msg.type == callbacks[index].type){
-			callbacks[index].callback(msg.size,msg.payload);
+			callbacks[index].callback(sock,msg.size,msg.payload);
 			return;
 		}
 	}
@@ -74,17 +74,14 @@ static void *broadcast_loop(void *args) {
 		
 		readsocks = select(highsock + 1, &socks, (fd_set *) 0, (fd_set *) 0, &timeout);
 		
-		if(new_bcast_message)
-			do_bcast();
-		
 		if (readsocks < 0) {
 			perror("select");
             exit(EXIT_FAILURE);
         }
         if (readsocks == 0) {
 			printf("select - Timeout expired");
-			/*if(new_bcast_message)
-				do_bcast();*/
+			if(new_bcast_message)
+				do_bcast();
         } else {
 			for(index = 0; index < last_controller_socket; index++){
 				if(FD_ISSET(controllers_sockets[index],&socks)){
@@ -95,7 +92,7 @@ static void *broadcast_loop(void *args) {
 					else if(transferred_bytes == 0){
 						perror("read");
 					}
-					call_function(msg);
+					call_function(controller_sockets[index],msg);
 				}
 				memset(msg.payload,0,SIZE_PAYLOAD);
 			}
