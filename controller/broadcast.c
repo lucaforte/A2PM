@@ -4,6 +4,8 @@
 #include "thread.h"
 #include "broadcast.h"
 
+#define GLOBAL_CONTROLLER_PORT 4567
+
 
 static int controllers_sockets[MAX_CONTROLLERS];
 static int last_controller_socket = 0;
@@ -33,7 +35,7 @@ static void *broadcast_loop(void *args) {
 }
 
 void initialize_broadcast(const char *controllers_path) {
-	FILE* f;
+	FILE *f;
 	char line[128];
 	int i = 0;
 
@@ -44,7 +46,7 @@ void initialize_broadcast(const char *controllers_path) {
 	}
 
 	while (fgets(line, 128, f) != NULL) {
-		controller_sockets[i++] = make_connection(GLOBAL_CONTROLLER_PORT, SOCK_DGRAM, line);
+		controllers_sockets[i++] = make_connection(GLOBAL_CONTROLLER_PORT, SOCK_DGRAM, line);
 	}
 	last_controller_socket = i;
 
@@ -54,7 +56,7 @@ void initialize_broadcast(const char *controllers_path) {
 }
 
 
-void broadcast(void *payload, size_t size) {
+void broadcast(int type, void *payload, size_t size) {
 
 
 	if(size > MAX_MESSAGE) {
@@ -67,7 +69,7 @@ void broadcast(void *payload, size_t size) {
 	new_bcast_message = true;
 }
 
-void register_callback(int type, void (*f)(void *content, size_t size)) {
+void register_callback(int type, void (*f)(int sock, void *content, size_t size)) {
 	callbacks[last_callback].type = type;
 	callbacks[last_callback++].callback = f;
 }

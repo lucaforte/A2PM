@@ -9,9 +9,9 @@
 
 typedef struct _cb {
 	int type;
-	void (*f)(void *content, size_t size) callback;
+	void (*callback)(int sock, void *content, size_t size);
 } callback_struct;
 
 void initialize_broadcast(const char *controllers_path);
-void broadcast(void *payload, size_t data);
-void register_callback(int type, void (*f)(void *content, size_t size));
+void broadcast(int type, void *payload, size_t data);
+void register_callback(int type, void (*f)(int sock, void *content, size_t size));
