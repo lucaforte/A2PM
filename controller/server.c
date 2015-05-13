@@ -21,6 +21,8 @@
 #define BUFSIZE                 4096    // buffer size (in bytes)
 #define TTC_THRESHOLD           300     // threshold to rejuvenate the VM (in sec)
 
+#define MTTF_SLEEP				10		// avg rej rate period
+
 
 int ml_model;                           // used machine-learning model
 struct timeval communication_timeout;
@@ -29,6 +31,10 @@ int allocated_vms[NUMBER_GROUPS];       // number of allocated spaces for the VM
 pthread_mutex_t mutex;                  // mutex used to update current_vms and allocated_vms values
 int state_man_vm = 0;
 pthread_mutex_t manage_vm_mutex;
+
+pthread_mutex_t mttf_mutex;
+float * rej_rate;
+int index_rej_rate = 0;
 
 /*** TODO: initialize with real provided services ***/
 enum operations{
@@ -153,6 +159,36 @@ void * balancer_thread(void * v){
 	}
 	
 }
+
+void * mttf_thread(void * args){
+	
+	int index;
+	float avg_rej_rate;
+	int thread_index_rej_rate;
+	
+	while(1){
+	
+		if(index_rej_rate == 0)
+			continue;
+	
+		avg_rej_rate = 0;
+	
+		pthread_mutex_lock(&mttf_mutex);
+		thread_index_rej_rate = index_rej_rate;
+		for(index = 0; index < thread_index_rej_rate; index++)
+			avg_rej_rate += rej_rate[index];
+		index_rej_rate = 0;
+		pthread_mutex_unlock(&mttf_mutex);
+	
+		avg_rej_rate = avg_rej_rate/thread_index_rej_rate;
+		
+		printf("AVG_REJ_RATE %f\n", avg_rej_rate);
+		//TODO: prepare the message for the broadcaster
+	
+		sleep(MTTF_SLEEP);
+	}
+}
+
 /* THREAD FUNCTION
  * The duties of this thread are ONLY to listen for messages
  * from a connected VM. If something goes wrong this thread
@@ -166,6 +202,8 @@ void * communication_thread(void * v){
     
     int numbytes;
     system_features current_features;
+    system_features init_features;
+    int flag_init_features = 0;
     char recv_buff[BUFSIZE];
     char send_buff[BUFSIZE];
 
@@ -186,12 +224,23 @@ void * communication_thread(void * v){
             } else{
                 // features correctly received
                 printf("Received data (%d bytes) from VM %s for the service %d\n", numbytes, vm.ip_address, vm.service_info.service);
-                //printf("%s\n", recv_buff);
+                printf("%s\n", recv_buff);
                 
                 fflush(stdout);
                 get_feature(recv_buff, current_features);
+                
+                // fill init_features only the first time
+                if(!flag_init_features){
+					memcpy(&init_features,&current_features,sizeof(system_features));
+					flag_init_features = 1;
+				}
+				
                 // at least 2 sets of features needed
                 if (vm.last_system_features_stored) {
+					float mean_time_to_fail = get_predicted_mttf(ml_model, vm.last_features, current_features, init_features);
+					pthread_mutex_lock(&mttf_mutex);
+					rej_rate[index_rej_rate++] = (1/mean_time_to_fail);
+					pthread_mutex_unlock(&mttf_mutex);
                     float predicted_time_to_crash = get_predicted_rttc(ml_model, vm.last_features, current_features);
                     printf("Predicted time to crash for VM %s for the service %d is: %f\n", vm.ip_address, vm.service_info.service, predicted_time_to_crash);
                     if (predicted_time_to_crash < (float)TTC_THRESHOLD) {
@@ -319,7 +368,12 @@ void accept_new_client(int sockfd, pthread_attr_t pthread_custom_attr){
         // allocate more slots if the memory is not enough
         if (current_vms[s.service] == allocated_vms[s.service]) {
             vm_data_set[s.service] = realloc(vm_data_set[s.service],sizeof(struct vm_data)*2*allocated_vms[s.service]);
+            
+            int previously_allocated = allocated_vms[s.service];
+            
             allocated_vms[s.service] *= 2;
+            
+            rej_rate = realloc(rej_rate,sizeof(float)*NUMBER_GROUPS*NUMBER_VMs + allocated_vms[s.service] - previously_allocated);
         }
         
         // assignment phase
@@ -430,6 +484,7 @@ int main(int argc,char ** argv){
     int port_balancer;		//port number for LB
     int index;
     pthread_attr_t pthread_custom_attr;
+    pthread_t tid;
     
     communication_timeout.tv_sec = COMMUNICATION_TIMEOUT;
     communication_timeout.tv_usec = 0;
@@ -454,6 +509,8 @@ int main(int argc,char ** argv){
         current_vms[index] = 0;	// actually no VMs are connected yet
         vm_data_set[index] = malloc(sizeof(struct vm_data)*NUMBER_VMs); // allocate the same memory initially for each groups
         allocated_vms[index] = NUMBER_VMs;  // number of slots allocated for each group
+        
+        rej_rate = (float *)malloc(sizeof(float)*NUMBER_GROUPS*NUMBER_VMs);
     }
     
     //Open the local connection
@@ -465,6 +522,9 @@ int main(int argc,char ** argv){
     //It must block until the system is not ready
     if((accept_load_balancer(sockfd_balancer,pthread_custom_attr)) < 0)
 		exit(1);
+    
+    pthread_attr_init(&pthread_custom_attr);
+    pthread_create(&tid,&pthread_custom_attr,mttf_thread,NULL);
     
     //Accept new clients
     while(1){

@@ -20,6 +20,31 @@ float calculate_linear_regression(system_features_with_slopes f) {
     242.8923;
 }
 
+float get_predicted_mttf(int ml_model, system_features last_features, system_features current_features, system_features init_features){
+
+	system_features_with_slopes f;
+	f.gen_time=current_features.time-last_features.time;
+	f.n_th_slope=current_features.n_th-last_features.n_th;
+	f.mem_used_slope=current_features.mem_used-last_features.mem_used;
+	f.mem_free_slope=current_features.mem_free-last_features.mem_free;
+	f.swap_used_slope=current_features.swap_used-last_features.swap_used;
+	f.swap_free_slope=current_features.swap_free-last_features.swap_free;
+	f.cpu_user_slope=current_features.cpu_user-last_features.cpu_user;
+	f.cpu_system_slope=current_features.cpu_system-last_features.cpu_system;
+	f.cpu_idle_slope=current_features.cpu_idle-last_features.cpu_idle;
+	f.n_th=init_features.n_th;
+	f.mem_used=init_features.mem_used;
+	f.mem_buffers=init_features.mem_buffers;
+	f.swap_used=init_features.swap_used;
+	f.cpu_user=init_features.cpu_user;
+	f.cpu_nice=init_features.cpu_nice;
+	f.cpu_system=init_features.cpu_system;
+	f.cpu_iowait=init_features.cpu_iowait;
+    f.cpu_idle=init_features.cpu_idle;
+
+    return calculate_linear_regression(f);
+}
+
 float get_predicted_rttc(int ml_model, system_features last_features, system_features current_features) {
 
 	system_features_with_slopes f;
