@@ -6,8 +6,6 @@
 
 #define GLOBAL_CONTROLLER_PORT 4567
 
-
-
 static int controllers_sockets[MAX_CONTROLLERS];
 static int last_controller_socket = 0;
 
@@ -46,11 +44,11 @@ static void do_bcast(void) {
 	// loop su tutte le socket in controllers_sockets
 }
 
-static void call_funcion(int sock, msg_struct msg){
+static void call_function(int sock, msg_struct msg){
 	int index;
 	for(index = 0; index < MAX_CALLBACKS; index++){
 		if(msg.type == callbacks[index].type){
-			callbacks[index].callback(sock,msg.size,msg.payload);
+			callbacks[index].callback(sock,msg.payload,msg.size);
 			return;
 		}
 	}
@@ -61,6 +59,7 @@ static void *broadcast_loop(void *args) {
 
 	int readsocks;
 	int transferred_bytes;
+	int index;
 	struct timeval timeout;
 	msg_struct msg;
 	msg.payload = malloc(SIZE_PAYLOAD);
@@ -92,7 +91,7 @@ static void *broadcast_loop(void *args) {
 					else if(transferred_bytes == 0){
 						perror("read");
 					}
-					call_function(controller_sockets[index],msg);
+					call_function(controllers_sockets[index],msg);
 				}
 				memset(msg.payload,0,SIZE_PAYLOAD);
 			}
@@ -104,6 +103,9 @@ static void *broadcast_loop(void *args) {
 }
 
 void initialize_broadcast(const char *controllers_path) {
+	
+	printf("Sono nell'init del broadcast\n");
+	
 	FILE *f;
 	char line[128];
 	int i = 0;
@@ -115,7 +117,8 @@ void initialize_broadcast(const char *controllers_path) {
 	}
 
 	while (fgets(line, 128, f) != NULL) {
-		controllers_sockets[i++] = make_connection(GLOBAL_CONTROLLER_PORT, SOCK_DGRAM, line);
+		//controllers_sockets[i++] = make_connection(GLOBAL_CONTROLLER_PORT, SOCK_DGRAM, line);
+		controllers_sockets[i++] = make_connection(GLOBAL_CONTROLLER_PORT, SOCK_STREAM, line);
 	}
 	last_controller_socket = i;
 

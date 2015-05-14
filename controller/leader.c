@@ -14,6 +14,7 @@
 #include "thread.h"
 #include "timer.h"
 
+#define PATH "/home/luca/Scrivania/controllers_list.txt"
 
 #define LEADER_SLEEP 1
 #define LEADER_SUSPECT_THRESHOLD 10
@@ -170,6 +171,8 @@ bool send_to_leader(void *payload, size_t size) {
 
 
 int initialize_leader(char *controllers_path) {
+
+	printf("Sono nell'init della leader election\n");
 
 	// Count controllers
 	FILE *f;

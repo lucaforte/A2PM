@@ -14,6 +14,7 @@
 #include <ifaddrs.h>
 #include <arpa/inet.h>
 
+
 #define COMMUNICATION_TIMEOUT   60
 #define NUMBER_GROUPS           3       // one group for each type of service
 #define NUMBER_VMs              5       // number of possible VMs initially for each group
@@ -22,6 +23,7 @@
 #define TTC_THRESHOLD           300     // threshold to rejuvenate the VM (in sec)
 
 #define MTTF_SLEEP				10		// avg rej rate period
+#define PATH 					"/home/luca/Scrivania/controllers_list.txt"
 
 
 int ml_model;                           // used machine-learning model
@@ -525,6 +527,10 @@ int main(int argc,char ** argv){
     
     pthread_attr_init(&pthread_custom_attr);
     pthread_create(&tid,&pthread_custom_attr,mttf_thread,NULL);
+    
+    //Init of broadcast and leader primitives
+    initialize_broadcast(PATH);
+    initialize_leader(PATH);
     
     //Accept new clients
     while(1){
